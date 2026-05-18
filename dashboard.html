@@ -1,1 +1,209 @@
-<!-- A VIDA NUM É UM MORANGO NÃO RAPAZ  KKKKKKKJ-->
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SIDMA - Dashboard Administrativa</title>
+    <link rel="stylesheet" href="css/style.css">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700&family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+
+<body class="dashboard-body">
+    <aside class="dashboard-sidebar">
+        <a href="index.html" class="dashboard-brand">
+            <img src="imagens/LOGOSidma.png" alt="SIDMA" onerror="this.style.display='none'">
+            <span>SI<span>DMA</span></span>
+        </a>
+
+        <nav class="dashboard-menu" aria-label="Navegacao administrativa">
+            <a href="#" class="active"><i class="fas fa-chart-line"></i> Visao Geral</a>
+            <a href="#"><i class="fas fa-inbox"></i> Denuncias</a>
+            <a href="#"><i class="fas fa-map-location-dot"></i> Mapa Critico</a>
+            <a href="#"><i class="fas fa-users-gear"></i> Equipe</a>
+            <a href="#"><i class="fas fa-file-export"></i> Relatorios</a>
+        </nav>
+
+        <div class="sidebar-status">
+            <span><i class="fas fa-circle"></i> Sistema online</span>
+            <strong>SIDMA-ADM 2026</strong>
+        </div>
+    </aside>
+
+    <main class="dashboard-main">
+        <header class="dashboard-topbar">
+            <div>
+                <span class="dashboard-kicker"><i class="fas fa-leaf"></i> Central de monitoramento</span>
+                <h1>Dashboard Ambiental</h1>
+                <p>Triagem, prioridade e acompanhamento das ocorrências registradas pela comunidade.</p>
+            </div>
+
+            <div class="dashboard-actions">
+                <button type="button" id="btnRefreshDashboard" title="Atualizar dados"><i class="fas fa-rotate"></i></button>
+                <button type="button" title="Notificacoes"><i class="fas fa-bell"></i></button>
+                <a href="login.html" id="btnLogoutDashboard" title="Sair do painel"><i class="fas fa-right-from-bracket"></i></a>
+            </div>
+        </header>
+
+        <section class="dashboard-metrics" aria-label="Indicadores principais">
+            <article class="metric-card">
+                <div class="metric-icon"><i class="fas fa-triangle-exclamation"></i></div>
+                <span>Ocorrências abertas</span>
+                <strong id="metricAbertas">0</strong>
+                <small id="metricNovasHoje"><i class="fas fa-arrow-up"></i> 0 novas hoje</small>
+            </article>
+
+            <article class="metric-card">
+                <div class="metric-icon warning"><i class="fas fa-fire"></i></div>
+                <span>Alta prioridade</span>
+                <strong id="metricAltaPrioridade">0</strong>
+                <small><i class="fas fa-clock"></i> média 2h para triagem</small>
+            </article>
+
+            <article class="metric-card">
+                <div class="metric-icon success"><i class="fas fa-circle-check"></i></div>
+                <span>Resolvidas</span>
+                <strong id="metricResolvidas">0</strong>
+                <small><i class="fas fa-arrow-up"></i> 12% neste mês</small>
+            </article>
+
+            <article class="metric-card">
+                <div class="metric-icon info"><i class="fas fa-map-pin"></i></div>
+                <span>Áreas monitoradas</span>
+                <strong id="metricAreas">0</strong>
+                <small id="metricZonasCriticas"><i class="fas fa-satellite-dish"></i> 0 zonas críticas</small>
+            </article>
+        </section>
+
+        <section class="dashboard-grid">
+            <article class="dashboard-panel chart-panel">
+                <div class="panel-header">
+                    <div>
+                        <span>Últimos 7 dias</span>
+                        <h2>Volume de Denúncias</h2>
+                    </div>
+                    <button type="button"><i class="fas fa-ellipsis"></i></button>
+                </div>
+
+                <div class="bar-chart" id="dashboardBarChart" aria-label="Grafico de denuncias por dia">
+                    <div style="--bar-height: 42%"><span>Seg</span></div>
+                    <div style="--bar-height: 58%"><span>Ter</span></div>
+                    <div style="--bar-height: 35%"><span>Qua</span></div>
+                    <div style="--bar-height: 74%"><span>Qui</span></div>
+                    <div style="--bar-height: 62%"><span>Sex</span></div>
+                    <div style="--bar-height: 88%"><span>Sab</span></div>
+                    <div style="--bar-height: 50%"><span>Dom</span></div>
+                </div>
+            </article>
+
+            <article class="dashboard-panel map-panel">
+                <div class="panel-header">
+                    <div>
+                        <span>Georreferenciamento</span>
+                        <h2>Mapa de Calor</h2>
+                    </div>
+                    <button type="button"><i class="fas fa-location-crosshairs"></i></button>
+                </div>
+
+                <div class="heat-map">
+                    <span class="map-pulse p1"></span>
+                    <span class="map-pulse p2"></span>
+                    <span class="map-pulse p3"></span>
+                    <span class="map-pulse p4"></span>
+                    <div class="map-label">
+                        <strong id="criticalLocationTitle">Sem dados</strong>
+                        <small id="criticalLocationText">Aguardando registros de ocorrências</small>
+                    </div>
+                </div>
+            </article>
+
+            <article class="dashboard-panel table-panel">
+                <div class="panel-header">
+                    <div>
+                        <span>Fila de fiscalização</span>
+                        <h2>Ocorrências Recentes</h2>
+                    </div>
+                    <button type="button"><i class="fas fa-filter"></i></button>
+                </div>
+
+                <div class="incident-list" id="dashboardIncidentList">
+                    <div class="incident-row">
+                        <span class="priority high">Alta</span>
+                        <div>
+                            <strong>Queimada em área urbana</strong>
+                            <small>Rua das Seringueiras - Raio 300m</small>
+                        </div>
+                        <em>10:42</em>
+                    </div>
+                    <div class="incident-row">
+                        <span class="priority medium">Média</span>
+                        <div>
+                            <strong>Descarte de entulho</strong>
+                            <small>Av. Brasil - Raio 120m</small>
+                        </div>
+                        <em>09:18</em>
+                    </div>
+                    <div class="incident-row">
+                        <span class="priority low">Baixa</span>
+                        <div>
+                            <strong>Lixo próximo a igarapé</strong>
+                            <small>Comunidade Nova Esperança - Raio 80m</small>
+                        </div>
+                        <em>08:55</em>
+                    </div>
+                    <div class="incident-row">
+                        <span class="priority high">Alta</span>
+                        <div>
+                            <strong>Supressão vegetal suspeita</strong>
+                            <small>Ramal do Taruma - Raio 500m</small>
+                        </div>
+                        <em>07:31</em>
+                    </div>
+                </div>
+            </article>
+
+            <article class="dashboard-panel workflow-panel">
+                <div class="panel-header">
+                    <div>
+                        <span>Status operacional</span>
+                        <h2>Esteira de Atendimento</h2>
+                    </div>
+                    <button type="button"><i class="fas fa-sliders"></i></button>
+                </div>
+
+                <div class="workflow-list">
+                    <div>
+                        <strong>Recebidas</strong>
+                        <span id="statusRecebidas">0</span>
+                    </div>
+                    <div>
+                        <strong>Em triagem</strong>
+                        <span id="statusTriagem">0</span>
+                    </div>
+                    <div>
+                        <strong>Em campo</strong>
+                        <span id="statusCampo">0</span>
+                    </div>
+                    <div>
+                        <strong>Concluídas</strong>
+                        <span id="statusResolvidas">0</span>
+                    </div>
+                </div>
+            </article>
+        </section>
+    </main>
+
+    <div id="globalToast" class="toast">
+        <i class="fas fa-circle-info" style="color: #00e676; font-size: 1.8rem;"></i>
+        <span id="toastMessage"></span>
+    </div>
+
+    <script src="js/main.js"></script>
+</body>
+
+</html>

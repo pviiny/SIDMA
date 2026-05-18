@@ -78,6 +78,8 @@ document.addEventListener("DOMContentLoaded", () => {
     const header = document.querySelector(".header");
     
     function toggleHeaderBackground() {
+        if (!header) return;
+
         if (window.scrollY > 50) {
             header.style.boxShadow = "0 10px 30px rgba(0, 0, 0, 0.5)";
             header.style.background = "rgba(10, 12, 10, 0.9)";
@@ -114,6 +116,37 @@ function triggerNotice(message) {
     setTimeout(() => {
         toast.classList.remove("show");
     }, 4000);
+}
+
+const SIDMA_API_BASE = `${window.location.origin}/api`;
+
+function getSidmaToken() {
+    return localStorage.getItem("sidma_token");
+}
+
+async function sidmaRequest(path, options = {}) {
+    const headers = {
+        "Content-Type": "application/json",
+        ...(options.headers || {})
+    };
+
+    const token = getSidmaToken();
+    if (token) {
+        headers.Authorization = `Bearer ${token}`;
+    }
+
+    const response = await fetch(`${SIDMA_API_BASE}${path}`, {
+        ...options,
+        headers
+    });
+
+    const data = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+        throw new Error(data.error || "Falha na comunicacao com a API SIDMA.");
+    }
+
+    return data;
 }
 
 // ==================================================================
@@ -287,9 +320,37 @@ if (document.getElementById("formDenunciaAmbiental")) {
     });
 
     // Envio Final do Formulário
-    document.getElementById("formDenunciaAmbiental").addEventListener("submit", (e) => {
+    document.getElementById("formDenunciaAmbiental").addEventListener("submit", async (e) => {
         e.preventDefault();
         triggerNotice("Enviando pacote de dados criptografados...");
+
+        const payload = {
+            titulo: document.getElementById("tituloOcorrencia").value.trim(),
+            descricao: document.getElementById("descricaoOcorrencia").value.trim(),
+            privacidade: document.querySelector("input[name='privacidade']:checked")?.value || "anonimo",
+            denunciante_nome: campoNome.value.trim() || null,
+            denunciante_cpf: campoCpf.value.trim() || null,
+            localizacao_texto: inputLocalizacao.value.trim(),
+            prioridade: "media",
+            evidencia_url: imgPreview.src || null
+        };
+
+        try {
+            await sidmaRequest("/denuncias", {
+                method: "POST",
+                body: JSON.stringify(payload)
+            });
+
+            triggerNotice("Sucesso! Registro inserido na fila de fiscalização.");
+            document.getElementById("formDenunciaAmbiental").reset();
+            containerPreview.classList.add("hidden");
+            textoUpload.textContent = "Clique para carregar foto da evidência";
+            optAnonimo.click();
+        } catch (error) {
+            triggerNotice(error.message);
+        }
+
+        return;
         
         setTimeout(() => {
             triggerNotice("Sucesso! Registro inserido na fila de fiscalização.");
@@ -333,18 +394,195 @@ if (document.getElementById("formLoginAdm")) {
     });
 
     // Evento de Submit para validação no Backend futuro
-    formLogin.addEventListener("submit", (e) => {
+    formLogin.addEventListener("submit", async (e) => {
         e.preventDefault();
         
         const usuario = document.getElementById("loginUser").value.trim();
+        const senha = campoSenha.value;
         
         triggerNotice("Validando assinatura digital...");
+
+        try {
+            const data = await sidmaRequest("/auth/login", {
+                method: "POST",
+                body: JSON.stringify({
+                    credencial: usuario,
+                    senha
+                })
+            });
+
+            localStorage.setItem("sidma_token", data.token);
+            localStorage.setItem("sidma_usuario", JSON.stringify(data.usuario));
+            triggerNotice(`Bem-vindo de volta, operador ${data.usuario.nome}!`);
+
+            setTimeout(() => {
+                window.location.href = "dashboard.html";
+            }, 700);
+        } catch (error) {
+            triggerNotice(error.message);
+        }
+
+        return;
         
         setTimeout(() => {
             // Simulação simples apenas de interface
             triggerNotice(`Bem-vindo de volta, operador ${usuario}!`);
+            setTimeout(() => {
+                window.location.href = "dashboard.html";
+            }, 900);
             
             // Aqui futuramente o backend redirecionará usando window.location.href
         }, 1500);
     });
+}
+
+// ==========================================================================
+// DASHBOARD ADMINISTRATIVA CONSUMINDO API REST
+// ==========================================================================
+if (document.body.classList.contains("dashboard-body")) {
+    const token = getSidmaToken();
+
+    if (!token) {
+        window.location.href = "login.html";
+    }
+
+    const statusLabels = {
+        recebida: "Recebida",
+        em_triagem: "Em triagem",
+        em_campo: "Em campo",
+        resolvida: "Resolvida",
+        arquivada: "Arquivada"
+    };
+
+    const priorityLabels = {
+        baixa: "Baixa",
+        media: "Media",
+        alta: "Alta"
+    };
+
+    const priorityClass = {
+        baixa: "low",
+        media: "medium",
+        alta: "high"
+    };
+
+    function setText(id, value) {
+        const element = document.getElementById(id);
+        if (element) element.textContent = value;
+    }
+
+    function formatDateTime(value) {
+        return new Intl.DateTimeFormat("pt-BR", {
+            day: "2-digit",
+            month: "2-digit",
+            hour: "2-digit",
+            minute: "2-digit"
+        }).format(new Date(value));
+    }
+
+    function renderMetrics(resumo) {
+        setText("metricAbertas", resumo.abertas || 0);
+        setText("metricAltaPrioridade", resumo.alta_prioridade || 0);
+        setText("metricResolvidas", resumo.resolvidas || 0);
+        setText("metricAreas", resumo.areas_monitoradas || 0);
+
+        const novasHoje = document.getElementById("metricNovasHoje");
+        if (novasHoje) {
+            novasHoje.innerHTML = `<i class="fas fa-arrow-up"></i> ${resumo.novas_hoje || 0} novas hoje`;
+        }
+
+        const zonasCriticas = document.getElementById("metricZonasCriticas");
+        if (zonasCriticas) {
+            zonasCriticas.innerHTML = `<i class="fas fa-satellite-dish"></i> ${resumo.alta_prioridade || 0} zonas críticas`;
+        }
+    }
+
+    function renderStatus(porStatus) {
+        const totals = porStatus.reduce((acc, item) => {
+            acc[item.status] = item.total;
+            return acc;
+        }, {});
+
+        setText("statusRecebidas", totals.recebida || 0);
+        setText("statusTriagem", totals.em_triagem || 0);
+        setText("statusCampo", totals.em_campo || 0);
+        setText("statusResolvidas", totals.resolvida || 0);
+    }
+
+    function renderChart(ultimosSeteDias) {
+        const chart = document.getElementById("dashboardBarChart");
+        if (!chart) return;
+
+        const max = Math.max(...ultimosSeteDias.map(item => item.total), 1);
+
+        chart.innerHTML = ultimosSeteDias.map((item) => {
+            const date = new Date(`${item.dia}T00:00:00`);
+            const label = new Intl.DateTimeFormat("pt-BR", { weekday: "short" }).format(date).replace(".", "");
+            const height = Math.max((item.total / max) * 88, 12);
+            return `<div style="--bar-height: ${height}%;" title="${item.total} denúncias"><span>${label}</span></div>`;
+        }).join("");
+    }
+
+    function renderCriticalLocations(locaisCriticos) {
+        const topLocation = locaisCriticos[0];
+
+        if (!topLocation) {
+            setText("criticalLocationTitle", "Sem dados");
+            setText("criticalLocationText", "Aguardando registros de ocorrências");
+            return;
+        }
+
+        setText("criticalLocationTitle", topLocation.localizacao_texto);
+        setText("criticalLocationText", `${topLocation.total} ocorrência(s) registradas nesta área`);
+    }
+
+    function renderRecentIncidents(recentes) {
+        const list = document.getElementById("dashboardIncidentList");
+        if (!list) return;
+
+        if (!recentes.length) {
+            list.innerHTML = `<div class="incident-row"><div><strong>Nenhuma denúncia cadastrada</strong><small>Os registros enviados pela comunidade aparecerão aqui.</small></div></div>`;
+            return;
+        }
+
+        list.innerHTML = recentes.map((denuncia) => `
+            <div class="incident-row">
+                <span class="priority ${priorityClass[denuncia.prioridade] || "medium"}">${priorityLabels[denuncia.prioridade] || "Media"}</span>
+                <div>
+                    <strong>${denuncia.titulo}</strong>
+                    <small>${denuncia.localizacao_texto} · ${statusLabels[denuncia.status] || denuncia.status}</small>
+                </div>
+                <em>${formatDateTime(denuncia.criado_em)}</em>
+            </div>
+        `).join("");
+    }
+
+    async function loadDashboard() {
+        try {
+            const data = await sidmaRequest("/dashboard/overview");
+            renderMetrics(data.resumo || {});
+            renderStatus(data.porStatus || []);
+            renderChart(data.ultimosSeteDias || []);
+            renderCriticalLocations(data.locaisCriticos || []);
+            renderRecentIncidents(data.recentes || []);
+        } catch (error) {
+            triggerNotice(error.message);
+
+            if (error.message.includes("Token")) {
+                localStorage.removeItem("sidma_token");
+                localStorage.removeItem("sidma_usuario");
+                setTimeout(() => {
+                    window.location.href = "login.html";
+                }, 900);
+            }
+        }
+    }
+
+    document.getElementById("btnRefreshDashboard")?.addEventListener("click", loadDashboard);
+    document.getElementById("btnLogoutDashboard")?.addEventListener("click", () => {
+        localStorage.removeItem("sidma_token");
+        localStorage.removeItem("sidma_usuario");
+    });
+
+    loadDashboard();
 }
