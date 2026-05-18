@@ -533,4 +533,269 @@ if (document.body.classList.contains("dashboard-body")) {
     });
 
     loadDashboard();
+
+    
 }
+
+// ==========================================================================
+// NOVOS CONTROLADORES AVANÇADOS DO DASHBOARD SIDMA
+// (ADICIONADO SEM REMOVER O SISTEMA ORIGINAL)
+// ==========================================================================
+
+// Alias seguro para compatibilidade
+const API_URL = SIDMA_API_BASE;
+
+// ==========================================================================
+// CONTROLE DE ACESSO GLOBAL
+// ==========================================================================
+function getAuthHeaders() {
+    const token = localStorage.getItem("sidma_token");
+
+    return {
+        "Content-Type": "application/json",
+        "Authorization": token ? `Bearer ${token}` : ""
+    };
+}
+
+function checkAuthentication() {
+    const publicPages = [
+        "index.html",
+        "login.html",
+        "cadastrar_denun.php"
+    ];
+
+    const currentPage = window.location.pathname.split("/").pop();
+
+    if (!publicPages.includes(currentPage) && currentPage !== "") {
+        const token = localStorage.getItem("sidma_token");
+
+        if (!token) {
+            window.location.href = "login.html";
+        }
+    }
+}
+
+// ==========================================================================
+// EVENTOS GLOBAIS E TELA DE LOGIN CORRIGIDA
+// ==========================================================================
+function initCommonEvents() {
+    const btnLogout = document.getElementById("btnLogoutDashboard");
+
+    if (btnLogout) {
+        btnLogout.addEventListener("click", (e) => {
+            e.preventDefault();
+
+            localStorage.removeItem("sidma_token");
+            localStorage.removeItem("sidma_usuario");
+
+            triggerNotice("Sessão encerrada.");
+
+            setTimeout(() => {
+                window.location.href = "login.html";
+            }, 700);
+        });
+    }
+
+    // Funcionalidade do botão mostrar/esconder senha do seu login.html
+    const btnTogglePassword = document.getElementById("btnTogglePassword");
+    const loginPassword = document.getElementById("loginPassword");
+    if (btnTogglePassword && loginPassword) {
+        btnTogglePassword.addEventListener("click", () => {
+            const isPassword = loginPassword.type === "password";
+            loginPassword.type = isPassword ? "text" : "password";
+            
+            const icon = btnTogglePassword.querySelector("i");
+            if (icon) {
+                icon.className = isPassword ? "fas fa-eye-slash" : "fas fa-eye";
+            }
+        });
+    }
+
+    // Gerenciador do Formulário de Login (Sincronizado com seus IDs exatos)
+    const loginForm = document.getElementById("formLoginAdm");
+    if (loginForm) {
+        loginForm.addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const credencial = document.getElementById("loginUser").value.trim();
+            const senha = document.getElementById("loginPassword").value;
+
+            try {
+                const response = await fetch(`${API_URL}/auth/login`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ credencial, senha })
+                });
+                const data = await response.json();
+
+                if (!response.ok) throw new Error(data.error || "Credenciais inválidas");
+
+                localStorage.setItem("sidma_token", data.token);
+                triggerNotice("Acesso autorizado! Entrando no terminal...");
+                setTimeout(() => { window.location.href = "dashboard.html"; }, 1000);
+            } catch (error) {
+                triggerNotice(error.message);
+            }
+        });
+    }
+}
+
+// ==========================================================================
+// NOVA DASHBOARD PRINCIPAL
+// ==========================================================================
+async function initAdvancedDashboard() {
+    if (!window.location.pathname.includes("dashboard.html")) return;
+
+    try {
+        const [
+            sumRes,
+            statusRes,
+            chartRes,
+            locRes
+        ] = await Promise.all([
+            fetch(`${API_URL}/denuncas/summary`, { headers: getAuthHeaders() }),
+            fetch(`${API_URL}/denuncas/by-status`, { headers: getAuthHeaders() }),
+            fetch(`${API_URL}/denuncas/last-seven-days`, { headers: getAuthHeaders() }),
+            fetch(`${API_URL}/denuncas/critical-locations`, { headers: getAuthHeaders() })
+        ]);
+
+        const summary = await sumRes.json();
+
+        // Métricas
+        const metricAbertas = document.getElementById("metricAbertas");
+        const metricAlta = document.getElementById("metricAltaPrioridade");
+        const metricResolvidas = document.getElementById("metricResolvidas");
+        const metricAreas = document.getElementById("metricAreas");
+
+        if (metricAbertas) metricAbertas.textContent = summary.abertas || 0;
+        if (metricAlta) metricAlta.textContent = summary.alta_prioridade || 0;
+        if (metricResolvidas) metricResolvidas.textContent = summary.resolvidas || 0;
+        if (metricAreas) metricAreas.textContent = summary.areas_monitoradas || 0;
+
+        const novasHoje = document.getElementById("metricNovasHoje");
+        if (novasHoje) {
+            novasHoje.innerHTML = `<i class="fas fa-arrow-up"></i> ${summary.novas_hoje || 0} novas hoje`;
+        }
+
+        // Local crítico
+        const locations = await locRes.json();
+        if (locations.length > 0) {
+            const title = document.getElementById("criticalLocationTitle");
+            const text = document.getElementById("criticalLocationText");
+
+            if (title) title.textContent = locations[0].localizacao_texto;
+            if (text) text.textContent = `${locations[0].total} recorrências registradas.`;
+        }
+
+        // Lista lateral
+        const listRes = await fetch(`${API_URL}/denuncas`, { headers: getAuthHeaders() });
+        const listData = await listRes.json();
+        const container = document.getElementById("dashboardIncidentList");
+
+        if (container && listData.denuncias) {
+            container.innerHTML = listData.denuncias
+                .slice(0, 4)
+                .map(d => `
+                <div class="incident-row">
+                    <span class="priority ${
+                        d.prioridade === 'alta' ? 'high' : d.prioridade === 'media' ? 'medium' : 'low'
+                    }">
+                        ${d.prioridade}
+                    </span>
+                    <div>
+                        <strong>${d.titulo}</strong>
+                        <small>${d.localizacao_texto}</small>
+                    </div>
+                    <em>
+                        ${new Date(d.criado_em).toLocaleTimeString('pt-BR', {
+                            hour: '2-digit',
+                            minute: '2-digit'
+                        })}
+                    </em>
+                </div>
+            `).join('');
+        }
+
+    } catch (err) {
+        console.error(err);
+        triggerNotice("Falha ao carregar dashboard avançada.");
+    }
+}
+
+// ==========================================================================
+// PÁGINA DE DENÚNCIAS
+// ==========================================================================
+async function initDenunciasPage() {
+    const container = document.getElementById("pageIncidentList");
+    if (!container) return;
+
+    try {
+        const response = await fetch(`${API_URL}/denuncas`, { headers: getAuthHeaders() });
+        const data = await response.json();
+
+        if (!data.denuncias || data.denuncias.length === 0) {
+            container.innerHTML = `
+                <tr>
+                    <td colspan="6" style="padding:20px;color:#888;text-align:center;">
+                        Nenhuma ocorrência encontrada no banco.
+                    </td>
+                </tr>
+            `;
+            return;
+        }
+
+        container.innerHTML = data.denuncias.map(d => `
+            <tr class="table-row-incident">
+                <td><strong>#ID-${d.id}</strong></td>
+                <td><span class="priority-badge ${d.prioridade}">${d.prioridade.toUpperCase()}</span></td>
+                <td>
+                    <div class="table-cell-title">${d.titulo}</div>
+                    <div class="table-cell-sub">${d.localizacao_texto}</div>
+                </td>
+                <td><span class="status-badge ${d.status}">${d.status.replace('_', ' ')}</span></td>
+                <td>${new Date(d.criado_em).toLocaleDateString('pt-BR')}</td>
+                <td>
+                    <select class="action-select-status" onchange="updateIncidentStatus(${d.id}, this.value)">
+                        <option value="recebida" ${d.status === 'recebida' ? 'selected' : ''}>Recebida</option>
+                        <option value="em_triagem" ${d.status === 'em_triagem' ? 'selected' : ''}>Em Triagem</option>
+                        <option value="em_campo" ${d.status === 'em_campo' ? 'selected' : ''}>Em Campo</option>
+                        <option value="resolvida" ${d.status === 'resolvida' ? 'selected' : ''}>Resolvida</option>
+                        <option value="arquivada" ${d.status === 'arquivada' ? 'selected' : ''}>Arquivada</option>
+                    </select>
+                </td>
+            </tr>
+        `).join('');
+
+    } catch (error) {
+        triggerNotice("Erro ao carregar lista de denúncias.");
+    }
+}
+
+// ==========================================================================
+// ATUALIZAÇÃO DE STATUS
+// ==========================================================================
+window.updateIncidentStatus = async function(id, newStatus) {
+    try {
+        const response = await fetch(`${API_URL}/denuncas/${id}`, {
+            method: "PUT",
+            headers: getAuthHeaders(),
+            body: JSON.stringify({ status: newStatus })
+        });
+
+        if (response.ok) {
+            triggerNotice(`Ocorrência #${id} atualizada com sucesso.`);
+            initDenunciasPage();
+        }
+    } catch (error) {
+        triggerNotice("Falha ao atualizar status.");
+    }
+};
+
+// ==========================================================================
+// INICIALIZADOR FINAL GLOBAL ADAPTADO
+// ==========================================================================
+document.addEventListener("DOMContentLoaded", () => {
+    checkAuthentication();
+    initCommonEvents();
+    initAdvancedDashboard();
+    initDenunciasPage();
+});

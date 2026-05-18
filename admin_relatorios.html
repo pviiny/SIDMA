@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SIDMA — Relatórios Oficiais</title>
+    <link rel="stylesheet" href="css/style.css">
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700&family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+<body class="dashboard-body">
+
+    <aside class="dashboard-sidebar">
+        <a href="index.html" class="dashboard-brand">
+            <span>SI<span>DMA</span></span>
+        </a>
+        <nav class="dashboard-menu">
+            <a href="dashboard.html"><i class="fas fa-chart-line"></i> Visão Geral</a>
+            <a href="adm_denuncias.html"><i class="fas fa-inbox"></i> Denúncias</a>
+            <a href="adm_mapa.html"><i class="fas fa-map-location-dot"></i> Mapa Crítico</a>
+            <a href="adm_equipe.html"><i class="fas fa-users-gear"></i> Equipe</a>
+            <a href="adm_relatorios.html" class="active"><i class="fas fa-file-export"></i> Relatórios</a>
+        </nav>
+    </aside>
+
+    <main class="dashboard-main">
+        <header class="dashboard-topbar">
+            <div>
+                <span class="dashboard-kicker"><i class="fas fa-print"></i> Consolidação Legal</span>
+                <h1>Exportação de Dados</h1>
+                <p>Gere documentos compilados da base de dados do Neon para fins de fiscalização governamental ou auditoria externa.</p>
+            </div>
+            <div class="dashboard-actions">
+                <a href="#" id="btnLogoutDashboard"><i class="fas fa-right-from-bracket"></i></a>
+            </div>
+        </header>
+
+        <section style="margin-top: 25px; background: #111; padding: 35px; border-radius: 8px; border: 1px solid #222; color: #fff; max-width: 600px;">
+            <div style="margin-bottom: 25px;">
+                <i class="fas fa-file-invoice" style="font-size: 3rem; color: #00e676; margin-bottom: 15px;"></i>
+                <h2 style="font-family: 'Montserrat', sans-serif;">Exportar Registros de Ocorrências</h2>
+                <p style="color: #888; font-size: 0.95rem; margin-top: 5px;">Gere uma via impressa ou salve o documento digital compilando o estado atual de todas as denúncias.</p>
+            </div>
+            
+            <button onclick="window.print()" style="padding: 12px 28px; background: #00e676; color: #000; font-family: 'Montserrat', sans-serif; font-weight: 700; font-size: 0.9rem; border: none; border-radius: 4px; cursor: pointer; display: inline-flex; align-items: center; gap: 10px; transition: transform 0.2s;">
+                <i class="fas fa-file-pdf"></i> IMPRIMIR / COMPILAR PDF
+            </button>
+        </section>
+    </main>
+
+    <script src="js/main.js"></script>
+</body>
+</html>

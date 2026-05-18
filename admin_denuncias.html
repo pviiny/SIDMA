@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SIDMA — Fila de Fiscalização</title>
+    <link rel="stylesheet" href="css/style.css">
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700&family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+<body class="dashboard-body">
+
+    <aside class="dashboard-sidebar">
+        <a href="index.html" class="dashboard-brand">
+            <span>SI<span>DMA</span></span>
+        </a>
+        <nav class="dashboard-menu">
+            <a href="dashboard.html"><i class="fas fa-chart-line"></i> Visão Geral</a>
+            <a href="adm_denuncias.html" class="active"><i class="fas fa-inbox"></i> Denúncias</a>
+            <a href="adm_mapa.html"><i class="fas fa-map-location-dot"></i> Mapa Crítico</a>
+            <a href="adm_equipe.html"><i class="fas fa-users-gear"></i> Equipe</a>
+            <a href="adm_relatorios.html"><i class="fas fa-file-export"></i> Relatórios</a>
+        </nav>
+        <div class="sidebar-status">
+            <span><i class="fas fa-circle" style="color: #00e676;"></i> Terminal Ativo</span>
+        </div>
+    </aside>
+
+    <main class="dashboard-main">
+        <header class="dashboard-topbar">
+            <div>
+                <span class="dashboard-kicker"><i class="fas fa-folder-open"></i> Banco de Dados Neon</span>
+                <h1>Gerenciamento de Ocorrências</h1>
+                <p>Modifique a esteira de atendimento e altere o status das denúncias ambientais em tempo real.</p>
+            </div>
+            <div class="dashboard-actions">
+                <a href="#" id="btnLogoutDashboard" title="Sair do Terminal" class="logout-btn">
+                    <i class="fas fa-right-from-bracket"></i>
+                </a>
+            </div>
+        </header>
+
+        <section class="dashboard-panel full-width-panel" style="margin-top: 25px; background: #111; padding: 25px; border-radius: 8px; border: 1px solid #222;">
+            <div style="overflow-x: auto;">
+                <table class="incidents-table-full" style="width: 100%; border-collapse: collapse; color: #fff; text-align: left;">
+                    <thead>
+                        <tr style="border-bottom: 2px solid #222; height: 45px; color: #888; font-family: 'Montserrat', sans-serif; font-size: 0.9rem;">
+                            <th style="padding: 10px;">Protocolo</th>
+                            <th style="padding: 10px;">Prioridade</th>
+                            <th style="padding: 10px;">Incidente / Localização</th>
+                            <th style="padding: 10px;">Status Atual</th>
+                            <th style="padding: 10px;">Data Registro</th>
+                            <th style="padding: 10px;">Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="pageIncidentList">
+                        </tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+
+    <div id="globalToast" class="toast">
+        <i class="fas fa-circle-info" style="color: #00e676; font-size: 1.8rem;"></i>
+        <span id="toastMessage"></span>
+    </div>
+
+    <script src="js/main.js"></script>
+</body>
+</html>

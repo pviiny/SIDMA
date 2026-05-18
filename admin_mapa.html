@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SIDMA — Mapa Crítico</title>
+    <link rel="stylesheet" href="css/style.css">
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700&family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+<body class="dashboard-body">
+
+    <aside class="dashboard-sidebar">
+        <a href="index.html" class="dashboard-brand">
+            <span>SI<span>DMA</span></span>
+        </a>
+        <nav class="dashboard-menu">
+            <a href="dashboard.html"><i class="fas fa-chart-line"></i> Visão Geral</a>
+            <a href="adm_denuncias.html"><i class="fas fa-inbox"></i> Denúncias</a>
+            <a href="adm_mapa.html" class="active"><i class="fas fa-map-location-dot"></i> Mapa Crítico</a>
+            <a href="adm_equipe.html"><i class="fas fa-users-gear"></i> Equipe</a>
+            <a href="adm_relatorios.html"><i class="fas fa-file-export"></i> Relatórios</a>
+        </nav>
+    </aside>
+
+    <main class="dashboard-main">
+        <header class="dashboard-topbar">
+            <div>
+                <span class="dashboard-kicker"><i class="fas fa-satellite"></i> Regiões de Calor</span>
+                <h1>Zonas Críticas Monitoradas</h1>
+                <p>Análise de densidade de incidentes gerada automaticamente com base nas recorrências espaciais.</p>
+            </div>
+            <div class="dashboard-actions">
+                <a href="#" id="btnLogoutDashboard"><i class="fas fa-right-from-bracket"></i></a>
+            </div>
+        </header>
+
+        <section id="mapGeoList" style="margin-top: 25px; display: flex; flex-direction: column; gap: 15px;">
+            </section>
+    </main>
+
+    <div id="globalToast" class="toast">
+        <i class="fas fa-circle-info" style="color: #00e676; font-size: 1.8rem;"></i>
+        <span id="toastMessage"></span>
+    </div>
+
+    <script src="js/main.js"></script>
+</body>
+</html>
