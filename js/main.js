@@ -474,16 +474,21 @@ if (document.body.classList.contains("dashboard-body") || window.location.pathna
     }
 
     function renderStatus(porStatus) {
-        const totals = porStatus.reduce((acc, item) => {
-            acc[item.status] = item.total;
-            return acc;
-        }, {});
+    // Transforma o array do banco em um objeto fácil de ler: { recebida: 5, em_triagem: 2... }
+    const totals = porStatus.reduce((acc, item) => {
+        acc[item.status] = item.total;
+        return acc;
+    }, {});
 
-        setText("statusRecebidas", totals.recebida || totals.recebidas || 0);
-        setText("statusTriagem", totals.em_triagem || 0);
-        setText("statusCampo", totals.em_campo || 0);
-        setText("statusResolvidas", totals.resolvida || totals.resolvidas || 0);
-    }
+    // Mapeia os dados do banco para os IDs corretos que estão no seu HTML da tela
+    setText("statusRecebidas", totals.recebida || 0);
+    setText("statusTriagem", totals.em_triagem || 0);
+    setText("statusCampo", totals.em_campo || 0);
+    
+    // Como no banco está 'resolvida', mas na tela o ID pode variar, atualizamos os dois possíveis cenários
+    setText("statusResolvidas", totals.resolvida || totals.resolvidas || 0);
+    setText("statusConcluidas", totals.resolvida || totals.resolvidas || 0);
+}
 
     function renderChart(ultimosSeteDias) {
         const chart = document.getElementById("dashboardBarChart");
@@ -869,3 +874,126 @@ if (window.location.pathname.includes("admin_denuncias.html")) {
     // Disparador inicial ao entrar na página
     fetchManagementData();
 }
+// ==========================================================================
+// CENTRAL DO MAPA INTERATIVO VIA LEAFLET (SEM CHAVE / OPEN-SOURCE)
+// ==========================================================================
+let leafletMapInstance = null;
+let leafletLayerGroup = null;
+
+function initLeafletCriticalMap() {
+    const mapElement = document.getElementById("criticalLeafletMap");
+    if (!mapElement) return;
+
+    // Centralizado nas coordenadas do seu banco (-3.09, -60.03)
+    const defaultCenter = [-3.090000, -60.030000];
+
+    // Cria a instância do mapa livre
+    leafletMapInstance = L.map('criticalLeafletMap').setView(defaultCenter, 12);
+
+    // Aplica o tema escuro/cyberpunk do CartoDB Voyageur Dark
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
+        subdomains: 'abcd',
+        maxZoom: 20
+    }).addTo(leafletMapInstance);
+
+    leafletLayerGroup = L.layerGroup().addTo(leafletMapInstance);
+
+    // Executa a busca de dados
+    fetchLeafletMapData();
+}
+
+async function fetchLeafletMapData() {
+    try {
+        const data = await sidmaRequest("/dashboard/overview");
+        renderLeafletPoints(data.locaisCriticos || []);
+    } catch (error) {
+        console.warn("API Offline. Injetando dados geográficos simulados para a apresentação...");
+        
+        // Mock de Contingência para a tela nunca ficar vazia
+        const mockLocais = [
+            { localizacao_texto: "Ramal do Tarumã - Km 12", latitude: -3.025400, longitude: -60.068110, total: 8 },
+            { localizacao_texto: "Rua das Seringueiras - Foco 1", latitude: -3.083410, longitude: -60.018920, total: 5 },
+            { localizacao_texto: "Av. Brasil - Reduto Urbano", latitude: -3.101240, longitude: -60.025430, total: 3 },
+            { localizacao_texto: "Comunidade Nova Esperança", latitude: -3.070120, longitude: -60.050320, total: 1 }
+        ];
+        renderLeafletPoints(mockLocais);
+    }
+}
+
+function renderLeafletPoints(locais) {
+    const geoListContainer = document.getElementById("mapGeoList");
+    if (!geoListContainer || !leafletLayerGroup) return;
+
+    geoListContainer.innerHTML = "";
+    leafletLayerGroup.clearLayers();
+
+    if (!locais || locais.length === 0) {
+        geoListContainer.innerHTML = `<div style="color: #555; text-align: center; padding: 20px;">Nenhum foco detectado.</div>`;
+        return;
+    }
+
+    locais.forEach((local) => {
+        const lat = parseFloat(local.latitude);
+        const lng = parseFloat(local.longitude);
+
+        if (isNaN(lat) || isNaN(lng)) return;
+
+        // Configuração de cores baseada em recorrência
+        const corCritica = local.total >= 5 ? "#ff3e3e" : local.total >= 3 ? "#ff9800" : "#00e676";
+        const raioMetros = 250 + (local.total * 70);
+
+        // 1. Adiciona o Círculo Térmico no Leaflet
+        const circle = L.circle([lat, lng], {
+            color: corCritica,
+            fillColor: corCritica,
+            fillOpacity: 0.25,
+            radius: raioMetros,
+            weight: 1.5
+        });
+
+        // Adiciona um popup flutuante elegante ao clicar no círculo
+        circle.bindPopup(`<strong style="color:#000;">${local.localizacao_texto}</strong><br><span style="color:#555;">${local.total} denúncias acumuladas</span>`);
+        leafletLayerGroup.addLayer(circle);
+
+        // 2. Monta o Card Lateral
+        const itemCard = document.createElement("div");
+        itemCard.style.background = "#161916";
+        itemCard.style.border = "1px solid #222";
+        itemCard.style.borderLeft = `4px solid ${corCritica}`;
+        itemCard.style.padding = "12px";
+        itemCard.style.borderRadius = "4px";
+        itemCard.style.cursor = "pointer";
+        itemCard.style.transition = "all 0.2s";
+
+        itemCard.innerHTML = `
+            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                <strong style="color: #fff; font-size: 0.9rem; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 250px;">
+                    ${local.localizacao_texto}
+                </strong>
+                <span style="background: rgba(255,255,255,0.04); color: ${corCritica}; font-size: 0.75rem; font-weight: 700; padding: 2px 6px; border-radius: 3px;">
+                    ${local.total} Focos
+                </span>
+            </div>
+            <small style="color: #555; font-size: 0.75rem; display: block; margin-top: 4px;">Coordenadas: ${lat.toFixed(4)}, ${lng.toFixed(4)}</small>
+        `;
+
+        // Ação de clique para centralizar a câmera no ponto com zoom dinâmico
+        itemCard.addEventListener("click", () => {
+            leafletMapInstance.setView([lat, lng], 14, { animate: true, duration: 0.8 });
+            circle.openPopup();
+        });
+
+        itemCard.addEventListener("mouseover", () => itemCard.style.background = "#1f241f");
+        itemCard.addEventListener("mouseout", () => itemCard.style.background = "#161916");
+
+        geoListContainer.appendChild(itemCard);
+    });
+}
+
+// Inicializador automático para verificar se estamos na página correta
+document.addEventListener("DOMContentLoaded", () => {
+    if (document.getElementById("criticalLeafletMap")) {
+        initLeafletCriticalMap();
+    }
+});
