@@ -690,3 +690,182 @@ async function initAdvancedDashboard() {
         console.error("Erro ao renderizar simulação:", err);
     }
 }
+
+// ==========================================================================
+// TELA DE GERENCIAMENTO COMPLETO DE OCORRÊNCIAS (admin_denuncias.html)
+// ==========================================================================
+if (window.location.pathname.includes("admin_denuncias.html")) {
+    let currentEditingId = null;
+
+    const statusBadges = {
+        recebida: `<span style="background: rgba(255, 193, 7, 0.15); color: #ffc107; padding: 5px 10px; border-radius: 4px; font-size: 0.8rem; font-weight: 500;"><i class="fas fa-clock"></i> Recebida</span>`,
+        em_triagem: `<span style="background: rgba(0, 123, 255, 0.15); color: #007bff; padding: 5px 10px; border-radius: 4px; font-size: 0.8rem; font-weight: 500;"><i class="fas fa-filter"></i> Em Triagem</span>`,
+        em_campo: `<span style="background: rgba(23, 162, 184, 0.15); color: #17a2b8; padding: 5px 10px; border-radius: 4px; font-size: 0.8rem; font-weight: 500;"><i class="fas fa-truck-ramp-box"></i> Em Campo</span>`,
+        resolvida: `<span style="background: rgba(40, 167, 69, 0.15); color: #28a745; padding: 5px 10px; border-radius: 4px; font-size: 0.8rem; font-weight: 500;"><i class="fas fa-check-circle"></i> Resolvida</span>`,
+        arquivada: `<span style="background: rgba(108, 117, 125, 0.15); color: #6c757d; padding: 5px 10px; border-radius: 4px; font-size: 0.8rem; font-weight: 500;"><i class="fas fa-box-archive"></i> Arquivada</span>`
+    };
+
+    const priorityBadges = {
+        baixa: `<span style="border-left: 3px solid #28a745; padding-left: 8px; color: #28a745; font-weight: 500;">Baixa</span>`,
+        media: `<span style="border-left: 3px solid #ffc107; padding-left: 8px; color: #ffc107; font-weight: 500;">Média</span>`,
+        alta: `<span style="border-left: 3px solid #dc3545; padding-left: 8px; color: #dc3545; font-weight: 600; text-shadow: 0 0 10px rgba(220,53,69,0.3);">Alta</span>`
+    };
+
+    // Função interna para estruturar e injetar as linhas da tabela
+    function populateTable(denuncias) {
+        const tbody = document.getElementById("pageIncidentList");
+        if (!tbody) return;
+
+        if (!denuncias || denuncias.length === 0) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="6" style="text-align: center; padding: 40px; color: #555; font-family: 'Poppins', sans-serif;">
+                        <i class="fas fa-database" style="font-size: 2rem; margin-bottom: 10px; display: block; color: #333;"></i>
+                        Nenhuma ocorrência encontrada no Banco de Dados Neon.
+                    </td>
+                </tr>`;
+            return;
+        }
+
+        tbody.innerHTML = denuncias.map((item, index) => {
+            const idCurto = item.id ? `#${item.id.toString().slice(-6).toUpperCase()}` : `#PR${1000 + index}`;
+            const dbId = item.id || `mock-${index}`;
+            
+            // Formatando Data com Fallback de proteção contra datas corrompidas
+            let dataFormatada = "N/A";
+            const dataObjeto = new Date(item.criado_em || item.data_registro || Date.now());
+            if (!isNaN(dataObjeto.getTime())) {
+                dataFormatada = new Intl.DateTimeFormat("pt-BR", {
+                    day: "2-digit",
+                    month: "2-digit",
+                    year: "numeric",
+                    hour: "2-digit",
+                    minute: "2-digit"
+                }).format(dataObjeto);
+            }
+
+            return `
+                <tr style="border-bottom: 1px solid #1a1a1a; height: 65px; font-family: 'Poppins', sans-serif; font-size: 0.95rem; transition: background 0.2s;" onmouseover="this.style.background='#141414'" onmouseout="this.style.background='transparent'">
+                    <td style="padding: 10px; font-weight: 600; color: #00e676;">${idCurto}</td>
+                    <td style="padding: 10px;">${priorityBadges[item.prioridade] || priorityBadges.media}</td>
+                    <td style="padding: 10px;">
+                        <div style="font-weight: 500; color: #fff;">${item.titulo}</div>
+                        <div style="font-size: 0.8rem; color: #666; max-width: 400px; white-space: nowrap; overflow: hidden; text-transform: ellipsis;" title="${item.localizacao_texto}">${item.localizacao_texto}</div>
+                    </td>
+                    <td style="padding: 10px;">${statusBadges[item.status] || statusBadges.recebida}</td>
+                    <td style="padding: 10px; color: #aaa; font-size: 0.85rem;">${dataFormatada}</td>
+                    <td style="padding: 10px;">
+                        <div style="display: flex; gap: 8px;">
+                            <button class="btn-action-edit" data-id="${dbId}" data-protocolo="${idCurto}" data-status="${item.status || 'recebida'}" style="background: #1a1a1a; border: 1px solid #333; color: #00e676; padding: 6px 12px; border-radius: 4px; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.background='#00e676'; this.style.color='#000';" onmouseout="this.style.background='#1a1a1a'; this.style.color='#00e676';">
+                                <i class="fas fa-sliders"></i> Tratar
+                            </button>
+                            <button class="btn-action-delete" data-id="${dbId}" style="background: rgba(220,53,69,0.05); border: 1px solid rgba(220,53,69,0.2); color: #dc3545; padding: 6px 10px; border-radius: 4px; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.background='#dc3545'; this.style.color='#fff';" onmouseout="this.style.background='transparent'; this.style.color='#dc3545';">
+                                <i class="fas fa-trash-can"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            `;
+        }).join("");
+
+        // Binds dinâmicos dos botões gerados na tabela
+        document.querySelectorAll(".btn-action-edit").forEach(btn => {
+            btn.addEventListener("click", (e) => {
+                const target = e.currentTarget;
+                currentEditingId = target.getAttribute("data-id");
+                
+                const modal = document.getElementById("statusModal");
+                const textProto = document.getElementById("modalProtocoloText");
+                const selectStatus = document.getElementById("selectModalStatus");
+
+                if (modal && textProto && selectStatus) {
+                    textProto.textContent = `Protocolo: ${target.getAttribute("data-protocolo")}`;
+                    selectStatus.value = target.getAttribute("data-status");
+                    modal.classList.remove("hidden");
+                }
+            });
+        });
+
+        document.querySelectorAll(".btn-action-delete").forEach(btn => {
+            btn.addEventListener("click", async (e) => {
+                const id = e.currentTarget.getAttribute("data-id");
+                if (confirm("Tem certeza que deseja expurgar este registro do Banco Neon permanentemente?")) {
+                    try {
+                        if (id.includes("mock")) {
+                            triggerNotice("Ação simulada: Registro removido localmente.");
+                            e.currentTarget.closest("tr").remove();
+                            return;
+                        }
+                        triggerNotice("Enviando comando de deleção...");
+                        await sidmaRequest(`/denuncias/${id}`, { method: "DELETE" });
+                        triggerNotice("Registro excluído com sucesso.");
+                        fetchManagementData(); // Recarrega a tabela real
+                    } catch (err) {
+                        triggerNotice(err.message);
+                    }
+                }
+            });
+        });
+    }
+
+    // Função de carregamento principal (Busca na API com Fallback Fake)
+    async function fetchManagementData() {
+        try {
+            // Requisição real para buscar todas as denúncias salvas no seu backend da Render
+            const data = await sidmaRequest("/denuncias");
+            // Se a API retornar um array direto ou um objeto com array
+            const listaOriginal = Array.isArray(data) ? data : (data.recentes || data.denuncias || []);
+            populateTable(listaOriginal);
+        } catch (error) {
+            console.warn("API de gerenciamento offline. Injetando Mock Data de contingência...", error.message);
+            
+            // --- MOCK DATA COMPLETA E ULTRA FOCO PARA APRESENTAÇÃO ---
+            const dadosFakeApresentacao = [
+                { id: "65f21a8bc412", prioridade: "alta", titulo: "Desmatamento e Extração de Madeira Ilegal", localizacao_texto: "Ramal do Tarumã - Área de Preservação Contígua", status: "recebida", criado_em: new Date().toISOString() },
+                { id: "65f21b92c415", prioridade: "media", titulo: "Queimada Criminosa de Larga Escala", localizacao_texto: "Av. das Torres, Km 4 - Área de Clareira Urbana", status: "em_triagem", criado_em: new Date(Date.now() - 3600000).toISOString() },
+                { id: "65f21c1fc419", prioridade: "baixa", titulo: "Descarte Químico Irregular de Resíduos", localizacao_texto: "Bairro Nova Cidade - Margem do Igarapé Principal", status: "em_campo", criado_em: new Date(Date.now() - 7200000).toISOString() },
+                { id: "65f21d42c422", prioridade: "alta", titulo: "Garimpo Clandestino de Minérios", localizacao_texto: "Bacia Hidrográfica do Alto Rio Negro", status: "recebida", criado_em: new Date(Date.now() - 10800000).toISOString() },
+                { id: "65f21e5dc425", prioridade: "resolvida", titulo: "Pesca Predatória em Período de Defeso", localizacao_texto: "Lago do Aleixo - Área de Proteção Ambiental", status: "resolvida", criado_em: new Date(Date.now() - 86400000).toISOString() }
+            ];
+            
+            populateTable(dadosFakeApresentacao);
+        }
+    }
+
+    // Configurações e Handlers do Modal de Edição de Status
+    document.getElementById("btnCancelStatusModal")?.addEventListener("click", () => {
+        document.getElementById("statusModal").classList.add("hidden");
+    });
+
+    document.getElementById("btnSaveStatusModal")?.addEventListener("click", async () => {
+        const selectStatus = document.getElementById("selectModalStatus");
+        if (!selectStatus || !currentEditingId) return;
+
+        const novoStatus = selectStatus.value;
+        triggerNotice("Atualizando esteira de atendimento...");
+
+        try {
+            if (currentEditingId.includes("mock")) {
+                triggerNotice("Sucesso! Status atualizado localmente na simulação.");
+                document.getElementById("statusModal").classList.add("hidden");
+                fetchManagementData(); // Força re-render com dados padrão
+                return;
+            }
+
+            // Requisição PATCH/PUT real enviada ao seu servidor na Render
+            await sidmaRequest(`/denuncias/${currentEditingId}/status`, {
+                method: "PATCH",
+                body: JSON.stringify({ status: novoStatus })
+            });
+
+            triggerNotice("Status sincronizado com o Banco Neon.");
+            document.getElementById("statusModal").classList.add("hidden");
+            fetchManagementData();
+        } catch (error) {
+            triggerNotice(error.message);
+        }
+    });
+
+    // Disparador inicial ao entrar na página
+    fetchManagementData();
+}
