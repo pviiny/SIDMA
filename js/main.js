@@ -1,216 +1,191 @@
-document.addEventListener("DOMContentLoaded", () => {
-    
-    // ================= 1. MENU ATIVO CONFORME O SCROLL =================
-    const navbarLinks = document.querySelectorAll(".navbar a:not(.nav-btn)");
-    const sections = document.querySelectorAll("section");
+    document.addEventListener("DOMContentLoaded", () => {
 
-    function activateMenuOnScroll() {
-        let currentSectionId = "";
-        
-        sections.forEach(section => {
-            const sectionTop = section.offsetTop;
-            // Detecta se a seção passou da metade superior da tela
-            if (window.scrollY >= sectionTop - 200) {
-                currentSectionId = section.getAttribute("id");
+        // ================= 1. MENU ATIVO CONFORME O SCROLL =================
+        const navbarLinks = document.querySelectorAll(".navbar a:not(.nav-btn)");
+        const sections = document.querySelectorAll("section");
+
+        function activateMenuOnScroll() {
+            let currentSectionId = "";
+
+            sections.forEach(section => {
+                const sectionTop = section.offsetTop;
+                // Detecta se a seção passou da metade superior da tela
+                if (window.scrollY >= sectionTop - 200) {
+                    currentSectionId = section.getAttribute("id");
+                }
+            });
+
+            navbarLinks.forEach(link => {
+                link.classList.remove("active");
+                if (currentSectionId && link.getAttribute("href").includes(currentSectionId)) {
+                    link.classList.add("active");
+                }
+            });
+        }
+
+        window.addEventListener("scroll", activateMenuOnScroll);
+
+
+        // ================= 2. ANIMAÇÃO SUAVE AO ROLAR A PÁGINA (SCROLL REVEAL) =================
+        const animationStyles = {
+            'fade-up': { transform: 'translateY(40px)', opacity: '0' },
+            'fade-left': { transform: 'translateX(-50px)', opacity: '0' },
+            'fade-right': { transform: 'translateX(50px)', opacity: '0' },
+            'fade-in': { opacity: '0' }
+        };
+
+        const animatedElements = document.querySelectorAll('.fade-up, .fade-left, .fade-right, .fade-in');
+
+        animatedElements.forEach(element => {
+            element.style.transition = "all 0.8s cubic-bezier(0.16, 1, 0.3, 1)";
+
+            for (const [className, styles] of Object.entries(animationStyles)) {
+                if (element.classList.contains(className)) {
+                    Object.assign(element.style, styles);
+                }
             }
         });
 
-        navbarLinks.forEach(link => {
-            link.classList.remove("active");
-            if (currentSectionId && link.getAttribute("href").includes(currentSectionId)) {
-                link.classList.add("active");
-            }
+        const appearanceObserver = new IntersectionObserver((entries, observer) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const target = entry.target;
+
+                    target.style.opacity = '1';
+                    target.style.transform = 'translate(0, 0)';
+
+                    observer.unobserve(target);
+                }
+            });
+        }, {
+            root: null,
+            threshold: 0.10
         });
-    }
 
-    window.addEventListener("scroll", activateMenuOnScroll);
+        animatedElements.forEach(element => appearanceObserver.observe(element));
 
 
-    // ================= 2. ANIMAÇÃO SUAVE AO ROLAR A PÁGINA (SCROLL REVEAL) =================
-    // Mapeia as classes do HTML para as propriedades de animação que adicionaremos dinamicamente
-    const animationStyles = {
-        'fade-up': { transform: 'translateY(40px)', opacity: '0' },
-        'fade-left': { transform: 'translateX(-50px)', opacity: '0' },
-        'fade-right': { transform: 'translateX(50px)', opacity: '0' },
-        'fade-in': { opacity: '0' }
-    };
+        // ================= 3. EFEITO GLASSMORPHISM DINÂMICO NO MENU OTIMIZADO =================
+        const header = document.querySelector(".header");
 
-    // Seleciona todos os elementos que possuem classes de animação na index
-    const animatedElements = document.querySelectorAll('.fade-up, .fade-left, .fade-right, .fade-in');
+        function toggleHeaderBackground() {
+            if (!header) return;
 
-    // Prepara os elementos escondendo-os antes da rolagem começar
-    animatedElements.forEach(element => {
-        element.style.transition = "all 0.8s cubic-bezier(0.16, 1, 0.3, 1)";
-        
-        // Aplica o estado inicial correto baseado na classe que o elemento tem
-        for (const [className, styles] of Object.entries(animationStyles)) {
-            if (element.classList.contains(className)) {
-                Object.assign(element.style, styles);
+            if (window.scrollY > 50) {
+                header.style.boxShadow = "0 10px 30px rgba(0, 0, 0, 0.5)";
+                header.style.background = "rgba(10, 12, 10, 0.9)";
+            } else {
+                header.style.boxShadow = "none";
+                header.style.background = "rgba(10, 12, 10, 0.75)";
             }
         }
+
+        window.addEventListener("scroll", toggleHeaderBackground);
+
+        toggleHeaderBackground();
+        activateMenuOnScroll();
     });
 
-    // Configura o observador de interseção (Intersection Observer API)
-    const appearanceObserver = new IntersectionObserver((entries, observer) => {
-        entries.forEach(entry => {
-            // Quando o elemento entra 10% na área visível da tela
-            if (entry.isIntersecting) {
-                const target = entry.target;
-                
-                // Torna o elemento visível e remove os descolamentos
-                target.style.opacity = '1';
-                target.style.transform = 'translate(0, 0)';
-                
-                // Remove o elemento do observador para melhorar a performance (só anima uma vez)
-                observer.unobserve(target);
-            }
-        });
-    }, {
-        root: null, // Usa o viewport do navegador
-        threshold: 0.10 // Dispara quando 10% do elemento aparece
-    });
 
-    // Ativa o observador para cada elemento animável
-    animatedElements.forEach(element => appearanceObserver.observe(element));
+    // ================= 4. SISTEMA GLOBAL DE NOTIFICAÇÕES (TOAST) =================
+    function triggerNotice(message) {
+        const toast = document.getElementById("globalToast");
+        const toastMsg = document.getElementById("toastMessage");
 
+        if (!toast || !toastMsg) return;
 
-    // ================= 3. EFEITO GLASSMORPHISM DINÂMICO NO MENU OTIMIZADO =================
-    const header = document.querySelector(".header");
-    
-    function toggleHeaderBackground() {
-        if (!header) return;
+        toastMsg.textContent = message;
+        toast.classList.add("show");
 
-        if (window.scrollY > 50) {
-            header.style.boxShadow = "0 10px 30px rgba(0, 0, 0, 0.5)";
-            header.style.background = "rgba(10, 12, 10, 0.9)";
-        } else {
-            header.style.boxShadow = "none";
-            header.style.background = "rgba(10, 12, 10, 0.75)";
+        setTimeout(() => {
+            toast.classList.remove("show");
+        }, 4000);
+    }
+
+    // Configuração da URL global apontando para o seu backend oficial hospedado na Render
+    const SIDMA_API_BASE = "https://sidma.onrender.com/api";
+
+    function getSidmaToken() {
+        return localStorage.getItem("sidma_token");
+    }
+
+    async function sidmaRequest(path, options = {}) {
+        const headers = {
+            "Content-Type": "application/json",
+            ...(options.headers || {})
+        };
+
+        const token = getSidmaToken();
+        if (token) {
+            headers.Authorization = `Bearer ${token}`;
         }
+
+        const response = await fetch(`${SIDMA_API_BASE}${path}`, {
+            ...options,
+            headers
+        });
+
+        const data = await response.json().catch(() => ({}));
+
+        if (!response.ok) {
+            throw new Error(data.error || "Falha na comunicação com a API SIDMA.");
+        }
+
+        return data;
     }
 
-    window.addEventListener("scroll", toggleHeaderBackground);
-    
-    // Executa uma vez no início caso a página recarregue no meio do scroll
-    toggleHeaderBackground();
-    activateMenuOnScroll();
-});
+    // ==========================================================================
+    // CONTROLADORES DA TELA DE DENÚNCIA (DADOS DINÂMICOS, GPS E PREVIEW)
+    // ==========================================================================
+    let map;
+    let marker;
+    let damageCircle;
+    let selectedCoordinates = null;
 
+    function initMap() {
+        const defaultLocation = { lat: -3.119027, lng: -60.021731 };
 
-// ================= 4. SISTEMA GLOBAL DE NOTIFICAÇÕES (TOAST) =================
-/**
- * Dispara um alerta visual premium na parte inferior direita da tela.
- * @param {string} message - O texto informativo que será exibido.
- */
-function triggerNotice(message) {
-    const toast = document.getElementById("globalToast");
-    const toastMsg = document.getElementById("toastMessage");
-    
-    if (!toast || !toastMsg) return;
+        const darkMapStyle = [
+            { "elementType": "geometry", "stylers": [{ "color": "#121512" }] },
+            { "elementType": "labels.text.fill", "stylers": [{ "color": "#747a74" }] },
+            { "elementType": "labels.text.stroke", "stylers": [{ "color": "#121512" }] },
+            { "featureType": "administrative", "elementType": "geometry", "stylers": [{ "color": "#2c332c" }] },
+            { "featureType": "road", "elementType": "geometry", "stylers": [{ "color": "#1c221c" }] },
+            { "featureType": "water", "elementType": "geometry", "stylers": [{ "color": "#070a07" }] }
+        ];
 
-    // Atualiza a mensagem e exibe o toast
-    toastMsg.textContent = message;
-    toast.classList.add("show");
+        map = new google.maps.Map(document.getElementById("googleMapContainer"), {
+            center: defaultLocation,
+            zoom: 14,
+            styles: darkMapStyle,
+            disableDefaultUI: true,
+            zoomControl: true
+        });
 
-    // Remove automaticamente após 4 segundos
-    setTimeout(() => {
-        toast.classList.remove("show");
-    }, 4000);
-}
+        marker = new google.maps.Marker({
+            position: defaultLocation,
+            map: map,
+            draggable: true,
+            title: "Foco da Ocorrência"
+        });
 
-const SIDMA_API_BASE = `${window.location.origin}/api`;
+        damageCircle = new google.maps.Circle({
+            map: map,
+            radius: 100,
+            fillColor: "#00e676",
+            fillOpacity: 0.15,
+            strokeColor: "#00e676",
+            strokeOpacity: 0.5,
+            widgetWeight: 1
+        });
 
-function getSidmaToken() {
-    return localStorage.getItem("sidma_token");
-}
+        damageCircle.bindTo("center", marker, "position");
 
-async function sidmaRequest(path, options = {}) {
-    const headers = {
-        "Content-Type": "application/json",
-        ...(options.headers || {})
-    };
+        google.maps.event.addListener(marker, 'dragend', function () {
+            selectedCoordinates = marker.getPosition();
+        });
 
-    const token = getSidmaToken();
-    if (token) {
-        headers.Authorization = `Bearer ${token}`;
     }
-
-    const response = await fetch(`${SIDMA_API_BASE}${path}`, {
-        ...options,
-        headers
-    });
-
-    const data = await response.json().catch(() => ({}));
-
-    if (!response.ok) {
-        throw new Error(data.error || "Falha na comunicacao com a API SIDMA.");
-    }
-
-    return data;
-}
-
-// ==================================================================
-// JS DA PARTE DE DENUNCIAS, Caso for usar o php, é melhor combinar com o backend, 
-// CONTROLADORES DA TELA DE DENÚNCIA (DADOS DINÂMICOS, GPS E PREVIEW)
-// ==========================================================================
-// Variáveis Globais de Controle do Mapa
-let map;
-let marker;
-let damageCircle;
-let selectedCoordinates = null;
-
-// Função chamada automaticamente pela API do Google Maps carregada no HTML
-function initMap() {
-    // Coordenadas padrão inicial (Centro do Brasil / Amazônia caso o GPS falhe)
-    const defaultLocation = { lat: -3.119027, lng: -60.021731 }; 
-
-    // Configuração visual Dark Mode para o Google Maps se integrar ao visual do site
-    const darkMapStyle = [
-        { "elementType": "geometry", "stylers": [{ "color": "#121512" }] },
-        { "elementType": "labels.text.fill", "stylers": [{ "color": "#747a74" }] },
-        { "elementType": "labels.text.stroke", "stylers": [{ "color": "#121512" }] },
-        { "featureType": "administrative", "elementType": "geometry", "stylers": [{ "color": "#2c332c" }] },
-        { "featureType": "road", "elementType": "geometry", "stylers": [{ "color": "#1c221c" }] },
-        { "featureType": "water", "elementType": "geometry", "stylers": [{ "color": "#070a07" }] }
-    ];
-
-    // Instancia o Mapa dentro do container da Modal
-    map = new google.maps.Map(document.getElementById("googleMapContainer"), {
-        center: defaultLocation,
-        zoom: 14,
-        styles: darkMapStyle,
-        disableDefaultUI: true,
-        zoomControl: true
-    });
-
-    // Instancia o Marcador arrastável (Pin)
-    marker = new google.maps.Marker({
-        position: defaultLocation,
-        map: map,
-        draggable: true,
-        title: "Foco da Ocorrência"
-    });
-
-    // Instancia o Círculo de Monitoramento (Estilo Radar)
-    damageCircle = new google.maps.Circle({
-        map: map,
-        radius: 100, // Raio inicial em metros
-        fillColor: "#00e676",
-        fillOpacity: 0.15,
-        strokeColor: "#00e676",
-        strokeOpacity: 0.5,
-        strokeWeight: 1
-    });
-
-    // Vincula o círculo ao marcador (O círculo anda junto com o Pin)
-    damageCircle.bindTo("center", marker, "position");
-
-    // Evento para capturar coordenadas quando terminar de arrastar o Pin
-    google.maps.event.addListener(marker, 'dragend', function() {
-        selectedCoordinates = marker.getPosition();
-    });
-}
-
 // Execução de binds dos componentes de tela
 if (document.getElementById("formDenunciaAmbiental")) {
     
@@ -225,15 +200,18 @@ if (document.getElementById("formDenunciaAmbiental")) {
         optAnonimo.classList.add("active");
         optIdentificado.classList.remove("active");
         dadosIdentificacao.classList.add("hidden");
-        campoNome.required = false; campoCpf.required = false;
-        campoNome.value = ""; campoCpf.value = "";
+        campoNome.required = false; 
+        campoCpf.required = false;
+        campoNome.value = ""; 
+        campoCpf.value = "";
     });
 
     optIdentificado.addEventListener("click", () => {
         optIdentificado.classList.add("active");
         optAnonimo.classList.remove("active");
         dadosIdentificacao.classList.remove("hidden");
-        campoNome.required = true; campoCpf.required = true;
+        campoNome.required = true; 
+        campoCpf.required = true;
     });
 
     // Máscara de CPF
@@ -259,7 +237,6 @@ if (document.getElementById("formDenunciaAmbiental")) {
     btnOpenMaps.addEventListener("click", () => {
         mapsModal.classList.remove("hidden");
         
-        // Tenta centralizar o Google Maps na posição real do usuário usando o GPS nativo antes dele arrastar
         if (navigator.geolocation) {
             navigator.geolocation.getCurrentPosition((position) => {
                 const userLoc = {
@@ -292,7 +269,6 @@ if (document.getElementById("formDenunciaAmbiental")) {
         const lng = coords.lng().toFixed(6);
         const raio = radiusSlider.value;
 
-        // Injeta a string tratada direto no input visível do formulário
         inputLocalizacao.value = `Lat: ${lat}, Lng: ${lng} (Raio: ${raio}m)`;
         
         mapsModal.classList.add("hidden");
@@ -319,7 +295,7 @@ if (document.getElementById("formDenunciaAmbiental")) {
         }
     });
 
-    // Envio Final do Formulário
+    // Envio Final do Formulário para a API da Render
     document.getElementById("formDenunciaAmbiental").addEventListener("submit", async (e) => {
         e.preventDefault();
         triggerNotice("Enviando pacote de dados criptografados...");
@@ -349,16 +325,6 @@ if (document.getElementById("formDenunciaAmbiental")) {
         } catch (error) {
             triggerNotice(error.message);
         }
-
-        return;
-        
-        setTimeout(() => {
-            triggerNotice("Sucesso! Registro inserido na fila de fiscalização.");
-            document.getElementById("formDenunciaAmbiental").reset();
-            containerPreview.classList.add("hidden");
-            textoUpload.textContent = "Clique para carregar foto da evidência";
-            optAnonimo.click();
-        }, 2000);
     });
 }
 
@@ -372,28 +338,22 @@ if (document.getElementById("formLoginAdm")) {
     const formLogin = document.getElementById("formLoginAdm");
     const btnEsqueci = document.getElementById("btnEsqueciSenha");
 
-    // Lógica de Mostrar / Esconder Senha Dinamicamente
     btnTogglePassword.addEventListener("click", () => {
-        // Alterna o tipo do input
         const isPassword = campoSenha.getAttribute("type") === "password";
         campoSenha.setAttribute("type", isPassword ? "text" : "password");
         
-        // Alterna graficamente o ícone do olho
         btnTogglePassword.innerHTML = isPassword 
             ? '<i class="fas fa-eye-slash"></i>' 
             : '<i class="fas fa-eye"></i>';
             
-        // Altera a cor de foco do botão
         btnTogglePassword.style.color = isPassword ? "#00e676" : "#8a8f8a";
     });
 
-    // Link simulado de Recuperação de Senha
     btnEsqueci.addEventListener("click", (e) => {
         e.preventDefault();
         triggerNotice("Contate o administrador do STI para redefinir sua credencial.");
     });
 
-    // Evento de Submit para validação no Backend futuro
     formLogin.addEventListener("submit", async (e) => {
         e.preventDefault();
         
@@ -421,18 +381,6 @@ if (document.getElementById("formLoginAdm")) {
         } catch (error) {
             triggerNotice(error.message);
         }
-
-        return;
-        
-        setTimeout(() => {
-            // Simulação simples apenas de interface
-            triggerNotice(`Bem-vindo de volta, operador ${usuario}!`);
-            setTimeout(() => {
-                window.location.href = "dashboard.html";
-            }, 900);
-            
-            // Aqui futuramente o backend redirecionará usando window.location.href
-        }, 1500);
     });
 }
 
