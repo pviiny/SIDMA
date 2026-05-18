@@ -536,4 +536,113 @@ if (document.body.classList.contains("dashboard-body")) {
 
     
 }
+// ==========================================================================
+// CENTRAL DE SIMULAÇÃO DA DASHBOARD (VERSÃO DE APRESENTAÇÃO)
+// ==========================================================================
+async function initAdvancedDashboard() {
+    if (!window.location.pathname.includes("dashboard.html")) return;
 
+    // --- DADOS FALSOS (MOCK) PARA A SIMULAÇÃO ---
+    const dadosSimuladosSummary = {
+        abertas: 13,
+        alta_prioridade: 4,
+        resolvidas: 8,
+        areas_monitoradas: 6,
+        novas_hoje: 3,
+        status_recebida: 5,
+        status_em_triagem: 3,
+        status_em_campo: 4,
+        status_resolvida: 8
+    };
+
+    const denunciasSimuladas = [
+        {
+            prioridade: "alta",
+            titulo: "Desmatamento ilegal detectado",
+            localizacao_texto: "Ramal do Tarumã - Km 12",
+            criado_em: new Date().toISOString()
+        },
+        {
+            prioridade: "media",
+            titulo: "Queimada em terreno baldio",
+            localizacao_texto: "Av. das Torres, Proximidades do Raio 300m",
+            criado_em: new Date(Date.now() - 3600000).toISOString() // 1 hora atrás
+        },
+        {
+            prioridade: "baixa",
+            titulo: "Descarte irregular de resíduos",
+            localizacao_texto: "Bairro Nova Cidade - Margem do Igarapé",
+            criado_em: new Date(Date.now() - 7200000).toISOString() // 2 horas atrás
+        },
+        {
+            prioridade: "alta",
+            titulo: "Extração de madeira não autorizada",
+            localizacao_texto: "Reserva Florestal Ducke - Margem Leste",
+            criado_em: new Date(Date.now() - 10800000).toISOString() // 3 horas atrás
+        }
+    ];
+
+    // --- INJEÇÃO DOS DADOS NA TELA ---
+    try {
+        // 1. Contadores Principais (Cards do Topo)
+        const metricAbertas = document.getElementById("metricAbertas");
+        const metricAlta = document.getElementById("metricAltaPrioridade");
+        const metricResolvidas = document.getElementById("metricResolvidas");
+        const metricAreas = document.getElementById("metricAreas");
+
+        if (metricAbertas) metricAbertas.textContent = dadosSimuladosSummary.abertas;
+        if (metricAlta) metricAlta.textContent = dadosSimuladosSummary.alta_prioridade;
+        if (metricResolvidas) metricResolvidas.textContent = dadosSimuladosSummary.resolvidas;
+        if (metricAreas) metricAreas.textContent = dadosSimuladosSummary.areas_monitoradas;
+
+        const novasHoje = document.getElementById("metricNovasHoje");
+        if (novasHoje) {
+            novasHoje.innerHTML = `<i class="fas fa-arrow-up"></i> ${dadosSimuladosSummary.novas_hoje} novas hoje`;
+        }
+
+        // 2. Esteira de Atendimento (Contadores Operacionais)
+        const statusRecebida = document.getElementById("status_recebida");
+        const statusTriagem = document.getElementById("status_em_triagem");
+        const statusCampo = document.getElementById("status_em_campo");
+        const statusResolvida = document.getElementById("status_resolvida");
+
+        if (statusRecebida) statusRecebida.textContent = dadosSimuladosSummary.status_recebida;
+        if (statusTriagem) statusTriagem.textContent = dadosSimuladosSummary.status_em_triagem;
+        if (statusCampo) statusCampo.textContent = dadosSimuladosSummary.status_em_campo;
+        if (statusResolvida) statusResolvida.textContent = dadosSimuladosSummary.status_resolvida;
+
+        // 3. Atualização do Mapa de Calor (Simulando Local Crítico)
+        const title = document.getElementById("criticalLocationTitle");
+        const text = document.getElementById("criticalLocationText");
+        if (title) title.textContent = "Ramal do Tarumã";
+        if (text) text.textContent = "Área com maior recorrência de focos térmicos.";
+
+        // 4. Lista Lateral de Ocorrências Recentes
+        const container = document.getElementById("dashboardIncidentList");
+        if (container) {
+            container.innerHTML = denunciasSimuladas.map(d => {
+                const prioridadeClasse = d.prioridade === 'alta' ? 'high' : d.prioridade === 'media' ? 'medium' : 'low';
+                const horaTexto = new Date(d.criado_em).toLocaleTimeString('pt-BR', {
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+
+                return `
+                <div class="incident-row">
+                    <span class="priority ${prioridadeClasse}">
+                        ${d.prioridade.charAt(0).toUpperCase() + d.prioridade.slice(1)}
+                    </span>
+                    <div>
+                        <strong>${d.titulo}</strong>
+                        <small>${d.localizacao_texto}</small>
+                    </div>
+                    <em>${horaTexto}</em>
+                </div>
+                `;
+            }).join('');
+        }
+
+    } catch (err) {
+        console.error("Erro ao renderizar simulação:", err);
+    }
+}
