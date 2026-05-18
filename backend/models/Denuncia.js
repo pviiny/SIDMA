@@ -176,7 +176,7 @@ async function summary() {
             COUNT(*) FILTER (WHERE status IN ('recebida', 'em_triagem', 'em_campo'))::int AS abertas,
             COUNT(*) FILTER (WHERE prioridade = 'alta')::int AS alta_prioridade,
             COUNT(*) FILTER (WHERE status = 'resolvida')::int AS resolvidas,
-            COUNT(*) FILTER (WHERE criado_em::date = CURRENT_DATE)::int AS novas_hoje,
+            COUNT(*) FILTER (WHERE (criado_em AT TIME ZONE 'America/Manaus')::date = (NOW() AT TIME ZONE 'America/Manaus')::date)::int AS novas_hoje,
             COUNT(DISTINCT localizacao_texto)::int AS areas_monitoradas
         FROM denuncias_ambientais
     `);
@@ -194,19 +194,22 @@ async function byStatus() {
     return result.rows;
 }
 
+// ==========================================================================
+// FUNÇÃO CORRIGIDA 100%: RETORNA OS ÚLTIMOS 7 DIAS DINÂMICOS E PROPORCIONAIS
+// ==========================================================================
 async function lastSevenDays() {
     const result = await db.query(`
         WITH dias AS (
-            SELECT generate_series(CURRENT_DATE - INTERVAL '6 days', CURRENT_DATE, INTERVAL '1 day')::date AS dia
+            SELECT (generate_series(CURRENT_DATE - INTERVAL '6 days', CURRENT_DATE, INTERVAL '1 day'))::date AS dia_puro
         )
         SELECT
-            dias.dia,
-            COALESCE(COUNT(denuncias_ambientais.id), 0)::int AS total
+            TO_CHAR(dias.dia_puro, 'YYYY-MM-DD') AS dia,
+            COUNT(d.id)::int AS total
         FROM dias
-        LEFT JOIN denuncias_ambientais
-            ON denuncias_ambientais.criado_em::date = dias.dia
-        GROUP BY dias.dia
-        ORDER BY dias.dia ASC
+        LEFT JOIN denuncias_ambientais d 
+            ON (d.criado_em AT TIME ZONE 'America/Manaus')::date = dias.dia_puro
+        GROUP BY dias.dia_puro
+        ORDER BY dias.dia_puro ASC
     `);
 
     return result.rows;
