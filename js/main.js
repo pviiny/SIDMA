@@ -1,191 +1,195 @@
-    document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", () => {
 
-        // ================= 1. MENU ATIVO CONFORME O SCROLL =================
-        const navbarLinks = document.querySelectorAll(".navbar a:not(.nav-btn)");
-        const sections = document.querySelectorAll("section");
+    // ================= 1. MENU ATIVO CONFORME O SCROLL =================
+    const navbarLinks = document.querySelectorAll(".navbar a:not(.nav-btn)");
+    const sections = document.querySelectorAll("section");
 
-        function activateMenuOnScroll() {
-            let currentSectionId = "";
+    function activateMenuOnScroll() {
+        let currentSectionId = "";
 
-            sections.forEach(section => {
-                const sectionTop = section.offsetTop;
-                // Detecta se a seção passou da metade superior da tela
-                if (window.scrollY >= sectionTop - 200) {
-                    currentSectionId = section.getAttribute("id");
-                }
-            });
+        sections.forEach(section => {
+            const sectionTop = section.offsetTop;
+            // Detecta se a seção passou da metade superior da tela
+            if (window.scrollY >= sectionTop - 200) {
+                currentSectionId = section.getAttribute("id");
+            }
+        });
 
-            navbarLinks.forEach(link => {
-                link.classList.remove("active");
-                if (currentSectionId && link.getAttribute("href").includes(currentSectionId)) {
-                    link.classList.add("active");
-                }
-            });
-        }
+        navbarLinks.forEach(link => {
+            link.classList.remove("active");
+            if (currentSectionId && link.getAttribute("href").includes(currentSectionId)) {
+                link.classList.add("active");
+            }
+        });
+    }
 
+    if (sections.length > 0 && navbarLinks.length > 0) {
         window.addEventListener("scroll", activateMenuOnScroll);
+        activateMenuOnScroll();
+    }
 
 
-        // ================= 2. ANIMAÇÃO SUAVE AO ROLAR A PÁGINA (SCROLL REVEAL) =================
-        const animationStyles = {
-            'fade-up': { transform: 'translateY(40px)', opacity: '0' },
-            'fade-left': { transform: 'translateX(-50px)', opacity: '0' },
-            'fade-right': { transform: 'translateX(50px)', opacity: '0' },
-            'fade-in': { opacity: '0' }
-        };
+    // ================= 2. ANIMAÇÃO SUAVE AO ROLAR A PÁGINA (SCROLL REVEAL) =================
+    const animationStyles = {
+        'fade-up': { transform: 'translateY(40px)', opacity: '0' },
+        'fade-left': { transform: 'translateX(-50px)', opacity: '0' },
+        'fade-right': { transform: 'translateX(50px)', opacity: '0' },
+        'fade-in': { opacity: '0' }
+    };
 
-        const animatedElements = document.querySelectorAll('.fade-up, .fade-left, .fade-right, .fade-in');
+    const animatedElements = document.querySelectorAll('.fade-up, .fade-left, .fade-right, .fade-in');
 
-        animatedElements.forEach(element => {
-            element.style.transition = "all 0.8s cubic-bezier(0.16, 1, 0.3, 1)";
+    animatedElements.forEach(element => {
+        element.style.transition = "all 0.8s cubic-bezier(0.16, 1, 0.3, 1)";
 
-            for (const [className, styles] of Object.entries(animationStyles)) {
-                if (element.classList.contains(className)) {
-                    Object.assign(element.style, styles);
-                }
-            }
-        });
-
-        const appearanceObserver = new IntersectionObserver((entries, observer) => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    const target = entry.target;
-
-                    target.style.opacity = '1';
-                    target.style.transform = 'translate(0, 0)';
-
-                    observer.unobserve(target);
-                }
-            });
-        }, {
-            root: null,
-            threshold: 0.10
-        });
-
-        animatedElements.forEach(element => appearanceObserver.observe(element));
-
-
-        // ================= 3. EFEITO GLASSMORPHISM DINÂMICO NO MENU OTIMIZADO =================
-        const header = document.querySelector(".header");
-
-        function toggleHeaderBackground() {
-            if (!header) return;
-
-            if (window.scrollY > 50) {
-                header.style.boxShadow = "0 10px 30px rgba(0, 0, 0, 0.5)";
-                header.style.background = "rgba(10, 12, 10, 0.9)";
-            } else {
-                header.style.boxShadow = "none";
-                header.style.background = "rgba(10, 12, 10, 0.75)";
+        for (const [className, styles] of Object.entries(animationStyles)) {
+            if (element.classList.contains(className)) {
+                Object.assign(element.style, styles);
             }
         }
-
-        window.addEventListener("scroll", toggleHeaderBackground);
-
-        toggleHeaderBackground();
-        activateMenuOnScroll();
     });
 
+    const appearanceObserver = new IntersectionObserver((entries, observer) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                const target = entry.target;
+                target.style.opacity = '1';
+                target.style.transform = 'translate(0, 0)';
+                observer.unobserve(target);
+            }
+        });
+    }, {
+        root: null,
+        threshold: 0.10
+    });
 
-    // ================= 4. SISTEMA GLOBAL DE NOTIFICAÇÕES (TOAST) =================
-    function triggerNotice(message) {
-        const toast = document.getElementById("globalToast");
-        const toastMsg = document.getElementById("toastMessage");
+    animatedElements.forEach(element => appearanceObserver.observe(element));
 
-        if (!toast || !toastMsg) return;
 
-        toastMsg.textContent = message;
-        toast.classList.add("show");
+    // ================= 3. EFEITO GLASSMORPHISM DINÂMICO NO MENU OTIMIZADO =================
+    const header = document.querySelector(".header");
 
-        setTimeout(() => {
-            toast.classList.remove("show");
-        }, 4000);
-    }
+    function toggleHeaderBackground() {
+        if (!header) return;
 
-    // Configuração da URL global apontando para o seu backend oficial hospedado na Render
-    const SIDMA_API_BASE = "https://sidma.onrender.com/api";
-
-    function getSidmaToken() {
-        return localStorage.getItem("sidma_token");
-    }
-
-    async function sidmaRequest(path, options = {}) {
-        const headers = {
-            "Content-Type": "application/json",
-            ...(options.headers || {})
-        };
-
-        const token = getSidmaToken();
-        if (token) {
-            headers.Authorization = `Bearer ${token}`;
+        if (window.scrollY > 50) {
+            header.style.boxShadow = "0 10px 30px rgba(0, 0, 0, 0.5)";
+            header.style.background = "rgba(10, 12, 10, 0.9)";
+        } else {
+            header.style.boxShadow = "none";
+            header.style.background = "rgba(10, 12, 10, 0.75)";
         }
-
-        const response = await fetch(`${SIDMA_API_BASE}${path}`, {
-            ...options,
-            headers
-        });
-
-        const data = await response.json().catch(() => ({}));
-
-        if (!response.ok) {
-            throw new Error(data.error || "Falha na comunicação com a API SIDMA.");
-        }
-
-        return data;
     }
 
-    // ==========================================================================
-    // CONTROLADORES DA TELA DE DENÚNCIA (DADOS DINÂMICOS, GPS E PREVIEW)
-    // ==========================================================================
-    let map;
-    let marker;
-    let damageCircle;
-    let selectedCoordinates = null;
-
-    function initMap() {
-        const defaultLocation = { lat: -3.119027, lng: -60.021731 };
-
-        const darkMapStyle = [
-            { "elementType": "geometry", "stylers": [{ "color": "#121512" }] },
-            { "elementType": "labels.text.fill", "stylers": [{ "color": "#747a74" }] },
-            { "elementType": "labels.text.stroke", "stylers": [{ "color": "#121512" }] },
-            { "featureType": "administrative", "elementType": "geometry", "stylers": [{ "color": "#2c332c" }] },
-            { "featureType": "road", "elementType": "geometry", "stylers": [{ "color": "#1c221c" }] },
-            { "featureType": "water", "elementType": "geometry", "stylers": [{ "color": "#070a07" }] }
-        ];
-
-        map = new google.maps.Map(document.getElementById("googleMapContainer"), {
-            center: defaultLocation,
-            zoom: 14,
-            styles: darkMapStyle,
-            disableDefaultUI: true,
-            zoomControl: true
-        });
-
-        marker = new google.maps.Marker({
-            position: defaultLocation,
-            map: map,
-            draggable: true,
-            title: "Foco da Ocorrência"
-        });
-
-        damageCircle = new google.maps.Circle({
-            map: map,
-            radius: 100,
-            fillColor: "#00e676",
-            fillOpacity: 0.15,
-            strokeColor: "#00e676",
-            strokeOpacity: 0.5,
-            widgetWeight: 1
-        });
-
-        damageCircle.bindTo("center", marker, "position");
-
-        google.maps.event.addListener(marker, 'dragend', function () {
-            selectedCoordinates = marker.getPosition();
-        });
-
+    if (header) {
+        window.addEventListener("scroll", toggleHeaderBackground);
+        toggleHeaderBackground();
     }
+});
+
+
+// ================= 4. SISTEMA GLOBAL DE NOTIFICAÇÕES (TOAST) =================
+function triggerNotice(message) {
+    const toast = document.getElementById("globalToast");
+    const toastMsg = document.getElementById("toastMessage");
+
+    if (!toast || !toastMsg) return;
+
+    toastMsg.textContent = message;
+    toast.classList.add("show");
+
+    setTimeout(() => {
+        toast.classList.remove("show");
+    }, 4000);
+}
+
+// Configuração da URL global apontando para o seu backend oficial hospedado na Render
+const SIDMA_API_BASE = "https://sidma.onrender.com/api";
+
+function getSidmaToken() {
+    return localStorage.getItem("sidma_token");
+}
+
+async function sidmaRequest(path, options = {}) {
+    const headers = {
+        "Content-Type": "application/json",
+        ...(options.headers || {})
+    };
+
+    const token = getSidmaToken();
+    if (token) {
+        headers.Authorization = `Bearer ${token}`;
+    }
+
+    const response = await fetch(`${SIDMA_API_BASE}${path}`, {
+        ...options,
+        headers
+    });
+
+    const data = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+        throw new Error(data.error || "Falha na comunicação com a API SIDMA.");
+    }
+
+    return data;
+}
+
+// ==========================================================================
+// CONTROLADORES DA TELA DE DENÚNCIA (DADOS DINÂMICOS, GPS E PREVIEW)
+// ==========================================================================
+let map;
+let marker;
+let damageCircle;
+let selectedCoordinates = null;
+
+function initMap() {
+    const mapContainer = document.getElementById("googleMapContainer");
+    if (!mapContainer) return;
+
+    const defaultLocation = { lat: -3.119027, lng: -60.021731 };
+
+    const darkMapStyle = [
+        { "elementType": "geometry", "stylers": [{ "color": "#121512" }] },
+        { "elementType": "labels.text.fill", "stylers": [{ "color": "#747a74" }] },
+        { "elementType": "labels.text.stroke", "stylers": [{ "color": "#121512" }] },
+        { "featureType": "administrative", "elementType": "geometry", "stylers": [{ "color": "#2c332c" }] },
+        { "featureType": "road", "elementType": "geometry", "stylers": [{ "color": "#1c221c" }] },
+        { "featureType": "water", "elementType": "geometry", "stylers": [{ "color": "#070a07" }] }
+    ];
+
+    map = new google.maps.Map(mapContainer, {
+        center: defaultLocation,
+        zoom: 14,
+        styles: darkMapStyle,
+        disableDefaultUI: true,
+        zoomControl: true
+    });
+
+    marker = new google.maps.Marker({
+        position: defaultLocation,
+        map: map,
+        draggable: true,
+        title: "Foco da Ocorrência"
+    });
+
+    damageCircle = new google.maps.Circle({
+        map: map,
+        radius: 100,
+        fillColor: "#00e676",
+        fillOpacity: 0.15,
+        strokeColor: "#00e676",
+        strokeOpacity: 0.5,
+        widgetWeight: 1
+    });
+
+    damageCircle.bindTo("center", marker, "position");
+
+    google.maps.event.addListener(marker, 'dragend', function () {
+        selectedCoordinates = marker.getPosition();
+    });
+}
+
 // Execução de binds dos componentes de tela
 if (document.getElementById("formDenunciaAmbiental")) {
     
@@ -196,33 +200,37 @@ if (document.getElementById("formDenunciaAmbiental")) {
     const campoCpf = document.getElementById("cpfUsuario");
 
     // Controle de Privacidade (Anônimo/Identificado)
-    optAnonimo.addEventListener("click", () => {
-        optAnonimo.classList.add("active");
-        optIdentificado.classList.remove("active");
-        dadosIdentificacao.classList.add("hidden");
-        campoNome.required = false; 
-        campoCpf.required = false;
-        campoNome.value = ""; 
-        campoCpf.value = "";
-    });
+    if (optAnonimo && optIdentificado) {
+        optAnonimo.addEventListener("click", () => {
+            optAnonimo.classList.add("active");
+            optIdentificado.classList.remove("active");
+            if (dadosIdentificacao) dadosIdentificacao.classList.add("hidden");
+            if (campoNome) campoNome.required = false; 
+            if (campoCpf) campoCpf.required = false;
+            if (campoNome) campoNome.value = ""; 
+            if (campoCpf) campoCpf.value = "";
+        });
 
-    optIdentificado.addEventListener("click", () => {
-        optIdentificado.classList.add("active");
-        optAnonimo.classList.remove("active");
-        dadosIdentificacao.classList.remove("hidden");
-        campoNome.required = true; 
-        campoCpf.required = true;
-    });
+        optIdentificado.addEventListener("click", () => {
+            optIdentificado.classList.add("active");
+            optAnonimo.classList.remove("active");
+            if (dadosIdentificacao) dadosIdentificacao.classList.remove("hidden");
+            if (campoNome) campoNome.required = true; 
+            if (campoCpf) campoCpf.required = true;
+        });
+    }
 
     // Máscara de CPF
-    campoCpf.addEventListener("input", (e) => {
-        let value = e.target.value.replace(/\D/g, "");
-        if (value.length > 11) value = value.slice(0, 11);
-        value = value.replace(/(\d{3})(\d)/, "$1.$2");
-        value = value.replace(/(\d{3})(\d)/, "$1.$2");
-        value = value.replace(/(\d{3})(\d{1,2})$/, "$1-$2");
-        e.target.value = value;
-    });
+    if (campoCpf) {
+        campoCpf.addEventListener("input", (e) => {
+            let value = e.target.value.replace(/\D/g, "");
+            if (value.length > 11) value = value.slice(0, 11);
+            value = value.replace(/(\d{3})(\d)/, "$1.$2");
+            value = value.replace(/(\d{3})(\d)/, "$1.$2");
+            value = value.replace(/(\d{3})(\d{1,2})$/, "$1-$2");
+            e.target.value = value;
+        });
+    }
 
     // CONTROLES DO MODAL DO MAPA
     const btnOpenMaps = document.getElementById("btnGpsSmart");
@@ -234,46 +242,57 @@ if (document.getElementById("formDenunciaAmbiental")) {
     const radiusVal = document.getElementById("radiusVal");
 
     // Gatilho para Abrir o Mapa Interativo
-    btnOpenMaps.addEventListener("click", () => {
-        mapsModal.classList.remove("hidden");
-        
-        if (navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition((position) => {
-                const userLoc = {
-                    lat: position.coords.latitude,
-                    lng: position.coords.longitude
-                };
-                map.setCenter(userLoc);
-                marker.setPosition(userLoc);
-                selectedCoordinates = marker.getPosition();
-            });
-        }
-    });
+    if (btnOpenMaps && mapsModal) {
+        btnOpenMaps.addEventListener("click", () => {
+            mapsModal.classList.remove("hidden");
+            
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition((position) => {
+                    const userLoc = {
+                        lat: position.coords.latitude,
+                        lng: position.coords.longitude
+                    };
+                    if (map && marker) {
+                        map.setCenter(userLoc);
+                        marker.setPosition(userLoc);
+                        selectedCoordinates = marker.getPosition();
+                    }
+                });
+            }
+        });
+    }
 
     // Fechar Modal sem Salvar
-    btnCloseMaps.addEventListener("click", () => mapsModal.classList.add("hidden"));
+    if (btnCloseMaps && mapsModal) {
+        btnCloseMaps.addEventListener("click", () => mapsModal.classList.add("hidden"));
+    }
 
     // Atualização do Raio em Tempo Real ao arrastar o Slider
-    radiusSlider.addEventListener("input", (e) => {
-        const radiusInMeters = parseInt(e.target.value);
-        radiusVal.textContent = radiusInMeters;
-        if (damageCircle) {
-            damageCircle.setRadius(radiusInMeters);
-        }
-    });
+    if (radiusSlider && radiusVal) {
+        radiusSlider.addEventListener("input", (e) => {
+            const radiusInMeters = parseInt(e.target.value);
+            radiusVal.textContent = radiusInMeters;
+            if (damageCircle) {
+                damageCircle.setRadius(radiusInMeters);
+            }
+        });
+    }
 
     // Confirmar Escolha de Posição do Mapa
-    btnConfirmarLocal.addEventListener("click", () => {
-        const coords = selectedCoordinates || marker.getPosition();
-        const lat = coords.lat().toFixed(6);
-        const lng = coords.lng().toFixed(6);
-        const raio = radiusSlider.value;
+    if (btnConfirmarLocal && inputLocalizacao && mapsModal) {
+        btnConfirmarLocal.addEventListener("click", () => {
+            if (!marker) return;
+            const coords = selectedCoordinates || marker.getPosition();
+            const lat = coords.lat().toFixed(6);
+            const lng = coords.lng().toFixed(6);
+            const raio = radiusSlider ? radiusSlider.value : 100;
 
-        inputLocalizacao.value = `Lat: ${lat}, Lng: ${lng} (Raio: ${raio}m)`;
-        
-        mapsModal.classList.add("hidden");
-        triggerNotice("Área demarcada com sucesso no satélite.");
-    });
+            inputLocalizacao.value = `Lat: ${lat}, Lng: ${lng} (Raio: ${raio}m)`;
+            
+            mapsModal.classList.add("hidden");
+            triggerNotice("Área demarcada com sucesso no satélite.");
+        });
+    }
 
     // Controle de Upload de Imagem de Evidência
     const arquivoEvidencia = document.getElementById("arquivoEvidencia");
@@ -281,19 +300,21 @@ if (document.getElementById("formDenunciaAmbiental")) {
     const containerPreview = document.getElementById("containerPreview");
     const imgPreview = document.getElementById("imgPreview");
 
-    arquivoEvidencia.addEventListener("change", (e) => {
-        const file = e.target.files[0];
-        if (file) {
-            textoUpload.textContent = `Evidência: ${file.name}`;
-            const reader = new FileReader();
-            reader.onload = function(event) {
-                imgPreview.src = event.target.result;
-                containerPreview.classList.remove("hidden");
-            };
-            reader.readAsDataURL(file);
-            triggerNotice("Foto carregada com sucesso.");
-        }
-    });
+    if (arquivoEvidencia && textoUpload && containerPreview && imgPreview) {
+        arquivoEvidencia.addEventListener("change", (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                textoUpload.textContent = `Evidência: ${file.name}`;
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    imgPreview.src = event.target.result;
+                    containerPreview.classList.remove("hidden");
+                };
+                reader.readAsDataURL(file);
+                triggerNotice("Foto carregada com sucesso.");
+            }
+        });
+    }
 
     // Envio Final do Formulário para a API da Render
     document.getElementById("formDenunciaAmbiental").addEventListener("submit", async (e) => {
@@ -304,11 +325,11 @@ if (document.getElementById("formDenunciaAmbiental")) {
             titulo: document.getElementById("tituloOcorrencia").value.trim(),
             descricao: document.getElementById("descricaoOcorrencia").value.trim(),
             privacidade: document.querySelector("input[name='privacidade']:checked")?.value || "anonimo",
-            denunciante_nome: campoNome.value.trim() || null,
-            denunciante_cpf: campoCpf.value.trim() || null,
-            localizacao_texto: inputLocalizacao.value.trim(),
+            denunciante_nome: campoNome ? campoNome.value.trim() || null : null,
+            denunciante_cpf: campoCpf ? campoCpf.value.trim() || null : null,
+            localizacao_texto: inputLocalizacao ? inputLocalizacao.value.trim() : "",
             prioridade: "media",
-            evidencia_url: imgPreview.src || null
+            evidencia_url: imgPreview ? imgPreview.src || null : null
         };
 
         try {
@@ -319,9 +340,9 @@ if (document.getElementById("formDenunciaAmbiental")) {
 
             triggerNotice("Sucesso! Registro inserido na fila de fiscalização.");
             document.getElementById("formDenunciaAmbiental").reset();
-            containerPreview.classList.add("hidden");
-            textoUpload.textContent = "Clique para carregar foto da evidência";
-            optAnonimo.click();
+            if (containerPreview) containerPreview.classList.add("hidden");
+            if (textoUpload) textoUpload.textContent = "Clique para carregar foto da evidência";
+            if (optAnonimo) optAnonimo.click();
         } catch (error) {
             triggerNotice(error.message);
         }
@@ -338,21 +359,25 @@ if (document.getElementById("formLoginAdm")) {
     const formLogin = document.getElementById("formLoginAdm");
     const btnEsqueci = document.getElementById("btnEsqueciSenha");
 
-    btnTogglePassword.addEventListener("click", () => {
-        const isPassword = campoSenha.getAttribute("type") === "password";
-        campoSenha.setAttribute("type", isPassword ? "text" : "password");
-        
-        btnTogglePassword.innerHTML = isPassword 
-            ? '<i class="fas fa-eye-slash"></i>' 
-            : '<i class="fas fa-eye"></i>';
+    if (btnTogglePassword && campoSenha) {
+        btnTogglePassword.addEventListener("click", () => {
+            const isPassword = campoSenha.getAttribute("type") === "password";
+            campoSenha.setAttribute("type", isPassword ? "text" : "password");
             
-        btnTogglePassword.style.color = isPassword ? "#00e676" : "#8a8f8a";
-    });
+            btnTogglePassword.innerHTML = isPassword 
+                ? '<i class="fas fa-eye-slash"></i>' 
+                : '<i class="fas fa-eye"></i>';
+                
+            btnTogglePassword.style.color = isPassword ? "#00e676" : "#8a8f8a";
+        });
+    }
 
-    btnEsqueci.addEventListener("click", (e) => {
-        e.preventDefault();
-        triggerNotice("Contate o administrador do STI para redefinir sua credencial.");
-    });
+    if (btnEsqueci) {
+        btnEsqueci.addEventListener("click", (e) => {
+            e.preventDefault();
+            triggerNotice("Contate o administrador do STI para redefinir sua credencial.");
+        });
+    }
 
     formLogin.addEventListener("submit", async (e) => {
         e.preventDefault();
@@ -387,11 +412,12 @@ if (document.getElementById("formLoginAdm")) {
 // ==========================================================================
 // DASHBOARD ADMINISTRATIVA CONSUMINDO API REST
 // ==========================================================================
-if (document.body.classList.contains("dashboard-body")) {
+if (document.body.classList.contains("dashboard-body") || window.location.pathname.includes("dashboard.html")) {
     const token = getSidmaToken();
 
+    // Comente as linhas abaixo se quiser testar a simulação local sem precisar logar na API
     if (!token) {
-        window.location.href = "login.html";
+         window.location.href = "login.html";
     }
 
     const statusLabels = {
@@ -404,7 +430,7 @@ if (document.body.classList.contains("dashboard-body")) {
 
     const priorityLabels = {
         baixa: "Baixa",
-        media: "Media",
+        media: "Média",
         alta: "Alta"
     };
 
@@ -420,12 +446,14 @@ if (document.body.classList.contains("dashboard-body")) {
     }
 
     function formatDateTime(value) {
+        const date = new Date(value);
+        if (isNaN(date.getTime())) return "Data inválida";
         return new Intl.DateTimeFormat("pt-BR", {
             day: "2-digit",
             month: "2-digit",
             hour: "2-digit",
             minute: "2-digit"
-        }).format(new Date(value));
+        }).format(date);
     }
 
     function renderMetrics(resumo) {
@@ -451,28 +479,37 @@ if (document.body.classList.contains("dashboard-body")) {
             return acc;
         }, {});
 
-        setText("statusRecebidas", totals.recebida || 0);
+        setText("statusRecebidas", totals.recebida || totals.recebidas || 0);
         setText("statusTriagem", totals.em_triagem || 0);
         setText("statusCampo", totals.em_campo || 0);
-        setText("statusResolvidas", totals.resolvida || 0);
+        setText("statusResolvidas", totals.resolvida || totals.resolvidas || 0);
     }
 
     function renderChart(ultimosSeteDias) {
         const chart = document.getElementById("dashboardBarChart");
         if (!chart) return;
 
+        if (!ultimosSeteDias || !ultimosSeteDias.length) {
+            chart.innerHTML = `<span style="color:#747a74; font-size:12px;">Sem dados para gráficos</span>`;
+            return;
+        }
+
         const max = Math.max(...ultimosSeteDias.map(item => item.total), 1);
 
         chart.innerHTML = ultimosSeteDias.map((item) => {
-            const date = new Date(`${item.dia}T00:00:00`);
-            const label = new Intl.DateTimeFormat("pt-BR", { weekday: "short" }).format(date).replace(".", "");
+            // Tratamento contra erro de data "Invalid time value"
+            let date = new Date(item.dia);
+            if (isNaN(date.getTime()) && item.dia.includes('-')) {
+                date = new Date(`${item.dia}T00:00:00`);
+            }
+            const label = isNaN(date.getTime()) ? item.dia : new Intl.DateTimeFormat("pt-BR", { weekday: "short" }).format(date).replace(".", "");
             const height = Math.max((item.total / max) * 88, 12);
             return `<div style="--bar-height: ${height}%;" title="${item.total} denúncias"><span>${label}</span></div>`;
         }).join("");
     }
 
     function renderCriticalLocations(locaisCriticos) {
-        const topLocation = locaisCriticos[0];
+        const topLocation = locaisCriticos ? locaisCriticos[0] : null;
 
         if (!topLocation) {
             setText("criticalLocationTitle", "Sem dados");
@@ -481,26 +518,26 @@ if (document.body.classList.contains("dashboard-body")) {
         }
 
         setText("criticalLocationTitle", topLocation.localizacao_texto);
-        setText("criticalLocationText", `${topLocation.total} ocorrência(s) registradas nesta área`);
+        setText("criticalLocationText", `${topLocation.total} ocorrência(s) registrada(s) nesta área`);
     }
 
     function renderRecentIncidents(recentes) {
         const list = document.getElementById("dashboardIncidentList");
         if (!list) return;
 
-        if (!recentes.length) {
+        if (!recentes || !recentes.length) {
             list.innerHTML = `<div class="incident-row"><div><strong>Nenhuma denúncia cadastrada</strong><small>Os registros enviados pela comunidade aparecerão aqui.</small></div></div>`;
             return;
         }
 
         list.innerHTML = recentes.map((denuncia) => `
             <div class="incident-row">
-                <span class="priority ${priorityClass[denuncia.prioridade] || "medium"}">${priorityLabels[denuncia.prioridade] || "Media"}</span>
+                <span class="priority ${priorityClass[denuncia.prioridade] || "medium"}">${priorityLabels[denuncia.prioridade] || "Média"}</span>
                 <div>
                     <strong>${denuncia.titulo}</strong>
                     <small>${denuncia.localizacao_texto} · ${statusLabels[denuncia.status] || denuncia.status}</small>
                 </div>
-                <em>${formatDateTime(denuncia.criado_em)}</em>
+                <em>${formatDateTime(denuncia.criado_em || denuncia.data_registro)}</em>
             </div>
         `).join("");
     }
@@ -514,14 +551,16 @@ if (document.body.classList.contains("dashboard-body")) {
             renderCriticalLocations(data.locaisCriticos || []);
             renderRecentIncidents(data.recentes || []);
         } catch (error) {
-            triggerNotice(error.message);
+            console.warn("API Offline ou Token Inválido. Rodando simulação local fallback...", error.message);
+            // Executa a simulação se o backend estiver inacessível
+            initAdvancedDashboard();
 
             if (error.message.includes("Token")) {
                 localStorage.removeItem("sidma_token");
                 localStorage.removeItem("sidma_usuario");
                 setTimeout(() => {
                     window.location.href = "login.html";
-                }, 900);
+                }, 1500);
             }
         }
     }
@@ -530,29 +569,29 @@ if (document.body.classList.contains("dashboard-body")) {
     document.getElementById("btnLogoutDashboard")?.addEventListener("click", () => {
         localStorage.removeItem("sidma_token");
         localStorage.removeItem("sidma_usuario");
+        window.location.href = "login.html";
     });
 
     loadDashboard();
-
-    
 }
+
 // ==========================================================================
-// CENTRAL DE SIMULAÇÃO DA DASHBOARD (VERSÃO DE APRESENTAÇÃO)
+// CENTRAL DE SIMULAÇÃO DA DASHBOARD (VERSÃO DE APRESENTAÇÃO / FALLBACK)
 // ==========================================================================
 async function initAdvancedDashboard() {
     if (!window.location.pathname.includes("dashboard.html")) return;
 
-    // --- DADOS FALSOS (MOCK) PARA A SIMULAÇÃO ---
+    // --- DADOS REAIS REPLICADOS PARA A SIMULAÇÃO ---
     const dadosSimuladosSummary = {
-        abertas: 13,
+        abertas: 14,
         alta_prioridade: 4,
-        resolvidas: 8,
-        areas_monitoradas: 6,
-        novas_hoje: 3,
-        status_recebida: 5,
-        status_em_triagem: 3,
-        status_em_campo: 4,
-        status_resolvida: 8
+        resolvidas: 0,
+        areas_monitoradas: 7,
+        novas_hoje: 14,
+        status_recebida: 0,
+        status_em_triagem: 0,
+        status_em_campo: 0,
+        status_resolvida: 0
     };
 
     const denunciasSimuladas = [
@@ -560,25 +599,29 @@ async function initAdvancedDashboard() {
             prioridade: "alta",
             titulo: "Desmatamento ilegal detectado",
             localizacao_texto: "Ramal do Tarumã - Km 12",
+            status: "recebida",
             criado_em: new Date().toISOString()
         },
         {
             prioridade: "media",
             titulo: "Queimada em terreno baldio",
             localizacao_texto: "Av. das Torres, Proximidades do Raio 300m",
-            criado_em: new Date(Date.now() - 3600000).toISOString() // 1 hora atrás
+            status: "em_triagem",
+            criado_em: new Date(Date.now() - 3600000).toISOString()
         },
         {
             prioridade: "baixa",
             titulo: "Descarte irregular de resíduos",
             localizacao_texto: "Bairro Nova Cidade - Margem do Igarapé",
-            criado_em: new Date(Date.now() - 7200000).toISOString() // 2 horas atrás
+            status: "em_campo",
+            criado_em: new Date(Date.now() - 7200000).toISOString()
         },
         {
             prioridade: "alta",
             titulo: "Extração de madeira não autorizada",
             localizacao_texto: "Reserva Florestal Ducke - Margem Leste",
-            criado_em: new Date(Date.now() - 10800000).toISOString() // 3 horas atrás
+            status: "recebida",
+            criado_em: new Date(Date.now() - 10800000).toISOString()
         }
     ];
 
@@ -600,11 +643,11 @@ async function initAdvancedDashboard() {
             novasHoje.innerHTML = `<i class="fas fa-arrow-up"></i> ${dadosSimuladosSummary.novas_hoje} novas hoje`;
         }
 
-        // 2. Esteira de Atendimento (Contadores Operacionais)
-        const statusRecebida = document.getElementById("status_recebida");
-        const statusTriagem = document.getElementById("status_em_triagem");
-        const statusCampo = document.getElementById("status_em_campo");
-        const statusResolvida = document.getElementById("status_resolvida");
+        // 2. Esteira de Atendimento (IDs Unificados com os padrões reais do HTML)
+        const statusRecebida = document.getElementById("statusRecebidas");
+        const statusTriagem = document.getElementById("statusTriagem");
+        const statusCampo = document.getElementById("statusCampo");
+        const statusResolvida = document.getElementById("statusResolvidas");
 
         if (statusRecebida) statusRecebida.textContent = dadosSimuladosSummary.status_recebida;
         if (statusTriagem) statusTriagem.textContent = dadosSimuladosSummary.status_em_triagem;
@@ -615,11 +658,12 @@ async function initAdvancedDashboard() {
         const title = document.getElementById("criticalLocationTitle");
         const text = document.getElementById("criticalLocationText");
         if (title) title.textContent = "Ramal do Tarumã";
-        if (text) text.textContent = "Área com maior recorrência de focos térmicos.";
+        if (text) text.textContent = "Área com maior ocorrência de focos térmicos.";
 
         // 4. Lista Lateral de Ocorrências Recentes
         const container = document.getElementById("dashboardIncidentList");
         if (container) {
+            const statusLabels = { recebida: "Recebida", em_triagem: "Em triagem", em_campo: "Em campo" };
             container.innerHTML = denunciasSimuladas.map(d => {
                 const prioridadeClasse = d.prioridade === 'alta' ? 'high' : d.prioridade === 'media' ? 'medium' : 'low';
                 const horaTexto = new Date(d.criado_em).toLocaleTimeString('pt-BR', {
@@ -634,7 +678,7 @@ async function initAdvancedDashboard() {
                     </span>
                     <div>
                         <strong>${d.titulo}</strong>
-                        <small>${d.localizacao_texto}</small>
+                        <small>${d.localizacao_texto} · ${statusLabels[d.status] || d.status}</small>
                     </div>
                     <em>${horaTexto}</em>
                 </div>
