@@ -25,12 +25,12 @@ function normalizeFilters(filters = {}) {
 
     if (filters.status) {
         values.push(filters.status);
-        where.push(`status = $${values.length}`);
+        where.push(`status = $${values.length}::denuncia_status`);
     }
 
     if (filters.prioridade) {
         values.push(filters.prioridade);
-        where.push(`prioridade = $${values.length}`);
+        where.push(`prioridade = $${values.length}::denuncia_prioridade`);
     }
 
     if (filters.busca) {
@@ -83,7 +83,21 @@ async function create(data) {
             evidencia_url,
             usuario_responsavel_id
          )
-         VALUES ($1, $2, COALESCE($3, 'recebida'), COALESCE($4, 'media'), COALESCE($5, 'anonimo'), $6, $7, $8, $9, $10, COALESCE($11, 100), $12, $13)
+         VALUES (
+            $1, 
+            $2, 
+            COALESCE($3, 'recebida')::denuncia_status, 
+            COALESCE($4, 'media')::denuncia_prioridade, 
+            $5, 
+            $6, 
+            $7, 
+            $8, 
+            $9, 
+            $10, 
+            COALESCE($11, 100), 
+            $12, 
+            $13
+         )
          RETURNING ${fields}`,
         [
             data.titulo,
@@ -111,8 +125,8 @@ async function update(id, data) {
          SET
             titulo = COALESCE($2, titulo),
             descricao = COALESCE($3, descricao),
-            status = COALESCE($4, status),
-            prioridade = COALESCE($5, prioridade),
+            status = COALESCE($4::denuncia_status, status),
+            prioridade = COALESCE($5::denuncia_prioridade, prioridade),
             privacidade = COALESCE($6, privacidade),
             denunciante_nome = COALESCE($7, denunciante_nome),
             denunciante_cpf = COALESCE($8, denunciante_cpf),
