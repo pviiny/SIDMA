@@ -1040,33 +1040,7 @@ function initTeamManagement() {
             icone: "fa-user-shield",
             corBadge: "#00e676"
         },
-        {
-            nome: "Teylon Rodrigues",
-            credencial: "AGENT-88412",
-            email: "teylon.rodrigues@sidma.gov",
-            perfil: "Analista de Monitoramento",
-            status: "Em Campo",
-            icone: "fa-user-gear",
-            corBadge: "#ff9800"
-        },
-        {
-            nome: "Carlos Eduardo Salinas",
-            credencial: "INSP-33215",
-            email: "salinas.carlos@sidma.gov",
-            perfil: "Fiscal de Campo Sênior",
-            status: "Online",
-            icone: "fa-user-check",
-            corBadge: "#00e676"
-        },
-        {
-            nome: "Mariana Souza Queiroz",
-            credencial: "GEOG-77410",
-            email: "mariana.queiroz@sidma.gov",
-            perfil: "Especialista em Geoprocessamento",
-            status: "Offline",
-            icone: "fa-user-graduate",
-            corBadge: "#555"
-        }
+    
     ];
 
     // Injeção do layout estruturado dos cards no HTML
