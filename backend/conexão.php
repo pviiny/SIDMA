@@ -1,1 +1,0 @@
-<!-- A VIDA NUM É UM MORANGO NÃO RAPAZ 3x KKKKKKKJ php é doid-->

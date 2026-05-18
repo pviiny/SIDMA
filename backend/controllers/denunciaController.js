@@ -35,17 +35,19 @@ function normalizePayload(body, responsibleUserId) {
     return {
         titulo: body.titulo || body.tituloOcorrencia,
         descricao: body.descricao || body.descricaoOcorrencia,
-        status: body.status,
-        prioridade: body.prioridade,
-        privacidade: body.privacidade,
-        denunciante_nome: body.denunciante_nome || body.nomeCompleto,
-        denunciante_cpf: body.denunciante_cpf || body.cpfUsuario,
+        // Garante que se o front-end não mandar o status, ele assuma 'recebida' por padrão
+        status: body.status || "recebida",
+        // Garante que a prioridade assuma 'media' se vier vazia
+        prioridade: body.prioridade || "media",
+        privacidade: body.privacidade || "anonimo",
+        denunciante_nome: body.denunciante_nome || body.nomeCompleto || null,
+        denunciante_cpf: body.denunciante_cpf || body.cpfUsuario || null,
         localizacao_texto: body.localizacao_texto || body.localizacaoOcorrencia,
         latitude: body.latitude ?? locationFromText.latitude,
         longitude: body.longitude ?? locationFromText.longitude,
         raio_metros: body.raio_metros ?? locationFromText.raio_metros,
-        evidencia_url: body.evidencia_url,
-        usuario_responsavel_id: body.usuario_responsavel_id || responsibleUserId
+        evidencia_url: body.evidencia_url || null,
+        usuario_responsavel_id: body.usuario_responsavel_id || responsibleUserId || null
     };
 }
 
