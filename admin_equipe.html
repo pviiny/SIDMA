@@ -22,9 +22,12 @@
             <a href="dashboard.html"><i class="fas fa-chart-line"></i> Visão Geral</a>
             <a href="admin_denuncias.html"><i class="fas fa-inbox"></i> Denuncias</a>
             <a href="admin_mapa.html"><i class="fas fa-map-location-dot"></i> Mapa Critico</a>
-            <a href="admin_equipe.html"><i class="fas fa-users-gear"></i> Equipe</a>
+            <a href="admin_equipe.html" class="active"><i class="fas fa-users-gear"></i> Equipe</a>
             <a href="admin_relatorios.html"><i class="fas fa-file-export"></i> Relatorios</a>
         </nav>
+        <div class="sidebar-status" style="margin-top: auto; padding: 20px; font-size: 0.85rem; color: #666; font-family: 'Poppins', sans-serif;">
+            <span><i class="fas fa-circle" style="color: #00e676;"></i> Terminal Ativo</span>
+        </div>
     </aside>
 
     <main class="dashboard-main">
@@ -35,13 +38,24 @@
                 <p>Usuários administrativos ativos responsáveis pela auditoria, triagem e despacho das vistorias de campo.</p>
             </div>
             <div class="dashboard-actions">
-                <a href="#" id="btnLogoutDashboard"><i class="fas fa-right-from-bracket"></i></a>
+                <a href="#" id="btnLogoutDashboard" title="Sair do Terminal" class="logout-btn">
+                    <i class="fas fa-right-from-bracket"></i>
+                </a>
             </div>
         </header>
 
-        <section id="teamGridList" style="margin-top: 25px; display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px;">
-            </section>
+        <section id="teamGridList" style="margin-top: 25px; display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; padding-bottom: 30px;">
+            <div style="grid-column: 1 / -1; color: #444; font-size: 0.9rem; text-align: center; padding: 40px; font-family: 'Poppins', sans-serif;">
+                <i class="fas fa-circle-notch fa-spin" style="color: #00e676; margin-bottom: 10px; display: block; font-size: 1.5rem;"></i> 
+                Sincronizando banco de credenciais...
+            </div>
+        </section>
     </main>
+
+    <div id="globalToast" class="toast">
+        <i class="fas fa-circle-info" style="color: #00e676; font-size: 1.8rem;"></i>
+        <span id="toastMessage"></span>
+    </div>
 
     <script src="js/main.js"></script>
 </body>

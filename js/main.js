@@ -192,7 +192,7 @@ function initMap() {
 
 // Execução de binds dos componentes de tela
 if (document.getElementById("formDenunciaAmbiental")) {
-    
+
     const optAnonimo = document.getElementById("optAnonimo");
     const optIdentificado = document.getElementById("optIdentificado");
     const dadosIdentificacao = document.getElementById("dadosIdentificacao");
@@ -205,9 +205,9 @@ if (document.getElementById("formDenunciaAmbiental")) {
             optAnonimo.classList.add("active");
             optIdentificado.classList.remove("active");
             if (dadosIdentificacao) dadosIdentificacao.classList.add("hidden");
-            if (campoNome) campoNome.required = false; 
+            if (campoNome) campoNome.required = false;
             if (campoCpf) campoCpf.required = false;
-            if (campoNome) campoNome.value = ""; 
+            if (campoNome) campoNome.value = "";
             if (campoCpf) campoCpf.value = "";
         });
 
@@ -215,7 +215,7 @@ if (document.getElementById("formDenunciaAmbiental")) {
             optIdentificado.classList.add("active");
             optAnonimo.classList.remove("active");
             if (dadosIdentificacao) dadosIdentificacao.classList.remove("hidden");
-            if (campoNome) campoNome.required = true; 
+            if (campoNome) campoNome.required = true;
             if (campoCpf) campoCpf.required = true;
         });
     }
@@ -245,7 +245,7 @@ if (document.getElementById("formDenunciaAmbiental")) {
     if (btnOpenMaps && mapsModal) {
         btnOpenMaps.addEventListener("click", () => {
             mapsModal.classList.remove("hidden");
-            
+
             if (navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition((position) => {
                     const userLoc = {
@@ -288,7 +288,7 @@ if (document.getElementById("formDenunciaAmbiental")) {
             const raio = radiusSlider ? radiusSlider.value : 100;
 
             inputLocalizacao.value = `Lat: ${lat}, Lng: ${lng} (Raio: ${raio}m)`;
-            
+
             mapsModal.classList.add("hidden");
             triggerNotice("Área demarcada com sucesso no satélite.");
         });
@@ -306,7 +306,7 @@ if (document.getElementById("formDenunciaAmbiental")) {
             if (file) {
                 textoUpload.textContent = `Evidência: ${file.name}`;
                 const reader = new FileReader();
-                reader.onload = function(event) {
+                reader.onload = function (event) {
                     imgPreview.src = event.target.result;
                     containerPreview.classList.remove("hidden");
                 };
@@ -353,7 +353,7 @@ if (document.getElementById("formDenunciaAmbiental")) {
 // CONTROLADORES DA TELA DE LOGIN ADMINISTRATIVO
 // ==========================================================================
 if (document.getElementById("formLoginAdm")) {
-    
+
     const campoSenha = document.getElementById("loginPassword");
     const btnTogglePassword = document.getElementById("btnTogglePassword");
     const formLogin = document.getElementById("formLoginAdm");
@@ -363,11 +363,11 @@ if (document.getElementById("formLoginAdm")) {
         btnTogglePassword.addEventListener("click", () => {
             const isPassword = campoSenha.getAttribute("type") === "password";
             campoSenha.setAttribute("type", isPassword ? "text" : "password");
-            
-            btnTogglePassword.innerHTML = isPassword 
-                ? '<i class="fas fa-eye-slash"></i>' 
+
+            btnTogglePassword.innerHTML = isPassword
+                ? '<i class="fas fa-eye-slash"></i>'
                 : '<i class="fas fa-eye"></i>';
-                
+
             btnTogglePassword.style.color = isPassword ? "#00e676" : "#8a8f8a";
         });
     }
@@ -381,10 +381,10 @@ if (document.getElementById("formLoginAdm")) {
 
     formLogin.addEventListener("submit", async (e) => {
         e.preventDefault();
-        
+
         const usuario = document.getElementById("loginUser").value.trim();
         const senha = campoSenha.value;
-        
+
         triggerNotice("Validando assinatura digital...");
 
         try {
@@ -417,7 +417,7 @@ if (document.body.classList.contains("dashboard-body") || window.location.pathna
 
     // Comente as linhas abaixo se quiser testar a simulação local sem precisar logar na API
     if (!token) {
-         window.location.href = "login.html";
+        window.location.href = "login.html";
     }
 
     const statusLabels = {
@@ -474,20 +474,27 @@ if (document.body.classList.contains("dashboard-body") || window.location.pathna
     }
 
     function renderStatus(porStatus) {
-    // Transforma o array do banco em um objeto fácil de ler: { recebida: 5, em_triagem: 2... }
+    if (!porStatus) return;
+
+    // 1. Mapeia e acumula os totais vindos do PostgreSQL
     const totals = porStatus.reduce((acc, item) => {
         acc[item.status] = item.total;
         return acc;
     }, {});
 
-    // Mapeia os dados do banco para os IDs corretos que estão no seu HTML da tela
-    setText("statusRecebidas", totals.recebida || 0);
-    setText("statusTriagem", totals.em_triagem || 0);
-    setText("statusCampo", totals.em_campo || 0);
-    
-    // Como no banco está 'resolvida', mas na tela o ID pode variar, atualizamos os dois possíveis cenários
-    setText("statusResolvidas", totals.resolvida || totals.resolvidas || 0);
-    setText("statusConcluidas", totals.resolvida || totals.resolvidas || 0);
+    // 2. Vincula exatamente aos IDs das suas tags <span> do HTML
+    const elRecebida = document.getElementById("status_recebida");
+    if (elRecebida) elRecebida.textContent = totals.recebida || 0;
+
+    const elTriagem = document.getElementById("status_em_triagem");
+    if (elTriagem) elTriagem.textContent = totals.em_triagem || 0;
+
+    const elCampo = document.getElementById("status_em_campo");
+    if (elCampo) elCampo.textContent = totals.em_campo || 0;
+
+    // Como o banco salva como 'resolvida', jogamos o valor direto no id do HTML
+    const elResolvida = document.getElementById("status_resolvida");
+    if (elResolvida) elResolvida.textContent = totals.resolvida || totals.resolvidas || 0;
 }
 
     function renderChart(ultimosSeteDias) {
@@ -735,7 +742,7 @@ if (window.location.pathname.includes("admin_denuncias.html")) {
         tbody.innerHTML = denuncias.map((item, index) => {
             const idCurto = item.id ? `#${item.id.toString().slice(-6).toUpperCase()}` : `#PR${1000 + index}`;
             const dbId = item.id || `mock-${index}`;
-            
+
             // Formatando Data com Fallback de proteção contra datas corrompidas
             let dataFormatada = "N/A";
             const dataObjeto = new Date(item.criado_em || item.data_registro || Date.now());
@@ -778,7 +785,7 @@ if (window.location.pathname.includes("admin_denuncias.html")) {
             btn.addEventListener("click", (e) => {
                 const target = e.currentTarget;
                 currentEditingId = target.getAttribute("data-id");
-                
+
                 const modal = document.getElementById("statusModal");
                 const textProto = document.getElementById("modalProtocoloText");
                 const selectStatus = document.getElementById("selectModalStatus");
@@ -823,7 +830,7 @@ if (window.location.pathname.includes("admin_denuncias.html")) {
             populateTable(listaOriginal);
         } catch (error) {
             console.warn("API de gerenciamento offline. Injetando Mock Data de contingência...", error.message);
-            
+
             // --- MOCK DATA COMPLETA E ULTRA FOCO PARA APRESENTAÇÃO ---
             const dadosFakeApresentacao = [
                 { id: "65f21a8bc412", prioridade: "alta", titulo: "Desmatamento e Extração de Madeira Ilegal", localizacao_texto: "Ramal do Tarumã - Área de Preservação Contígua", status: "recebida", criado_em: new Date().toISOString() },
@@ -832,7 +839,7 @@ if (window.location.pathname.includes("admin_denuncias.html")) {
                 { id: "65f21d42c422", prioridade: "alta", titulo: "Garimpo Clandestino de Minérios", localizacao_texto: "Bacia Hidrográfica do Alto Rio Negro", status: "recebida", criado_em: new Date(Date.now() - 10800000).toISOString() },
                 { id: "65f21e5dc425", prioridade: "resolvida", titulo: "Pesca Predatória em Período de Defeso", localizacao_texto: "Lago do Aleixo - Área de Proteção Ambiental", status: "resolvida", criado_em: new Date(Date.now() - 86400000).toISOString() }
             ];
-            
+
             populateTable(dadosFakeApresentacao);
         }
     }
@@ -909,7 +916,7 @@ async function fetchLeafletMapData() {
         renderLeafletPoints(data.locaisCriticos || []);
     } catch (error) {
         console.warn("API Offline. Injetando dados geográficos simulados para a apresentação...");
-        
+
         // Mock de Contingência para a tela nunca ficar vazia
         const mockLocais = [
             { localizacao_texto: "Ramal do Tarumã - Km 12", latitude: -3.025400, longitude: -60.068110, total: 8 },
@@ -997,3 +1004,104 @@ document.addEventListener("DOMContentLoaded", () => {
         initLeafletCriticalMap();
     }
 });
+
+// ==========================================================================
+// TELA DE CORPO TÉCNICO E AGENTES (admin_equipe.html)
+// ==========================================================================
+function initTeamManagement() {
+    const teamGrid = document.getElementById("teamGridList");
+    if (!teamGrid) return;
+
+    // Busca os dados do operador atual salvos no localStorage pelo formulário de Login
+    let operadorAtual = { nome: "Administrador SIDMA", credencial: "ADM-12345", email: "admin@sidma.local", perfil: "Diretor" };
+    try {
+        const localUser = localStorage.getItem("sidma_usuario");
+        if (localUser) {
+            const parsed = JSON.parse(localUser);
+            operadorAtual = {
+                nome: parsed.nome || parsed.name,
+                credencial: parsed.credencial || "OP-2026",
+                email: parsed.email || "agente@sidma.gov",
+                perfil: parsed.perfil === "admin" ? "Administrador Geral" : "Operador Técnico"
+            };
+        }
+    } catch (err) {
+        console.warn("Erro ao ler dados do login local.", err);
+    }
+
+    // LISTA COMPLETA DA EQUIPE DISPARADA COMO FALLBACK E INTEGRADA
+    const corpoTecnico = [
+        {
+            nome: operadorAtual.nome,
+            credencial: operadorAtual.credencial,
+            email: operadorAtual.email,
+            perfil: operadorAtual.perfil,
+            status: "Online",
+            icone: "fa-user-shield",
+            corBadge: "#00e676"
+        },
+        {
+            nome: "Teylon Rodrigues",
+            credencial: "AGENT-88412",
+            email: "teylon.rodrigues@sidma.gov",
+            perfil: "Analista de Monitoramento",
+            status: "Em Campo",
+            icone: "fa-user-gear",
+            corBadge: "#ff9800"
+        },
+        {
+            nome: "Carlos Eduardo Salinas",
+            credencial: "INSP-33215",
+            email: "salinas.carlos@sidma.gov",
+            perfil: "Fiscal de Campo Sênior",
+            status: "Online",
+            icone: "fa-user-check",
+            corBadge: "#00e676"
+        },
+        {
+            nome: "Mariana Souza Queiroz",
+            credencial: "GEOG-77410",
+            email: "mariana.queiroz@sidma.gov",
+            perfil: "Especialista em Geoprocessamento",
+            status: "Offline",
+            icone: "fa-user-graduate",
+            corBadge: "#555"
+        }
+    ];
+
+    // Injeção do layout estruturado dos cards no HTML
+    teamGrid.innerHTML = corpoTecnico.map((membro) => `
+        <div class="team-card" style="background: #111; border: 1px solid #222; border-radius: 8px; padding: 25px; display: flex; flex-direction: column; gap: 15px; position: relative; transition: all 0.2s;" onmouseover="this.style.borderColor='#00e676'; this.style.transform='translateY(-3px)'" onmouseout="this.style.borderColor='#222'; this.style.transform='translateY(0)'">
+            
+            <span style="position: absolute; top: 20px; right: 20px; display: flex; align-items: center; gap: 6px; font-size: 0.75rem; font-family: 'Poppins', sans-serif; color: ${membro.corBadge === '#555' ? '#666' : membro.corBadge}; font-weight: 600;">
+                <i class="fas fa-circle" style="font-size: 0.6rem; color: ${membro.corBadge};"></i> ${membro.status}
+            </span>
+
+            <div style="width: 55px; height: 55px; background: rgba(0, 230, 118, 0.04); border: 1px solid rgba(0, 230, 118, 0.15); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #00e676; font-size: 1.4rem;">
+                <i class="fas ${membro.icone}"></i>
+            </div>
+
+            <div style="font-family: 'Poppins', sans-serif;">
+                <h3 style="font-family: 'Montserrat', sans-serif; font-size: 1.05rem; color: #fff; margin-bottom: 4px; font-weight: 600;">${membro.nome}</h3>
+                <span style="background: rgba(255,255,255,0.03); color: #888; font-size: 0.75rem; padding: 3px 8px; border-radius: 4px; display: inline-block; margin-bottom: 12px; border: 1px solid #222;">
+                    ${membro.perfil}
+                </span>
+                
+                <div style="display: flex; flex-direction: column; gap: 6px; font-size: 0.8rem; color: #aaa; margin-top: 5px;">
+                    <div><i class="fas fa-id-card" style="width: 20px; color: #444;"></i> <span style="color: #666;">ID:</span> <span style="font-family: monospace; color: #00e676;">${membro.credencial}</span></div>
+                    <div><i class="fas fa-envelope" style="width: 20px; color: #444;"></i> <span style="color: #666;">E-mail:</span> ${membro.email}</div>
+                </div>
+            </div>
+
+            <div style="border-top: 1px solid #1a1a1a; padding-top: 15px; margin-top: 5px; display: flex; justify-content: space-between; align-items: center;">
+                <span style="font-size: 0.75rem; color: #444; font-family: 'Poppins', sans-serif;">Acessos de auditoria liberados</span>
+                <button type="button" style="background: transparent; border: none; color: #555; cursor: pointer; transition: color 0.2s;" onmouseover="this.style.color='#ff3e3e'" onmouseout="this.style.color='#555'" title="Revogar Credencial">
+                    <i class="fas fa-user-slash"></i>
+                </button>
+            </div>
+        </div>
+    `).join("");
+}
+
+// Disparador inteligente na carga da página
+document.addEventListener("DOMContentLoaded", initTeamManagement);
