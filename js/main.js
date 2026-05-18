@@ -640,27 +640,27 @@ function initCommonEvents() {
 }
 
 // ==========================================================================
-// NOVA DASHBOARD PRINCIPAL
+// NOVA DASHBOARD PRINCIPAL - CORRIGIDA E CONECTADA COM O BACKEND
 // ==========================================================================
 async function initAdvancedDashboard() {
     if (!window.location.pathname.includes("dashboard.html")) return;
 
     try {
-        const [
-            sumRes,
-            statusRes,
-            chartRes,
-            locRes
-        ] = await Promise.all([
+        // Busca os dados consolidados do backend
+        const [sumRes, listRes] = await Promise.all([
             fetch(`${API_URL}/denuncas/summary`, { headers: getAuthHeaders() }),
-            fetch(`${API_URL}/denuncas/by-status`, { headers: getAuthHeaders() }),
-            fetch(`${API_URL}/denuncas/last-seven-days`, { headers: getAuthHeaders() }),
-            fetch(`${API_URL}/denuncas/critical-locations`, { headers: getAuthHeaders() })
+            fetch(`${API_URL}/denuncas`, { headers: getAuthHeaders() })
         ]);
 
-        const summary = await sumRes.json();
+        if (!sumRes.ok || !listRes.ok) {
+            console.warn("A API retornou um erro ao buscar os dados da dashboard.");
+            return;
+        }
 
-        // Métricas
+        const summary = await sumRes.json();
+        const listData = await listRes.json();
+
+        // 1. MAPEAMENTO DE MÉTRICAS CARD (Topo da Dashboard)
         const metricAbertas = document.getElementById("metricAbertas");
         const metricAlta = document.getElementById("metricAltaPrioridade");
         const metricResolvidas = document.getElementById("metricResolvidas");
@@ -676,126 +676,70 @@ async function initAdvancedDashboard() {
             novasHoje.innerHTML = `<i class="fas fa-arrow-up"></i> ${summary.novas_hoje || 0} novas hoje`;
         }
 
-        // Local crítico
-        const locations = await locRes.json();
-        if (locations.length > 0) {
-            const title = document.getElementById("criticalLocationTitle");
-            const text = document.getElementById("criticalLocationText");
+        // 2. ESTEIRA DE ATENDIMENTO (Workflow das Ocorrências Lançadas)
+        // Mapeia dinamicamente os IDs que adicionamos no seu HTML baseado no retorno da API
+        const statusRecebida = document.getElementById("status_recebida");
+        const statusTriagem = document.getElementById("status_em_triagem");
+        const statusCampo = document.getElementById("status_em_campo");
+        const statusResolvida = document.getElementById("status_resolvida");
 
-            if (title) title.textContent = locations[0].localizacao_texto;
-            if (text) text.textContent = `${locations[0].total} recorrências registradas.`;
-        }
+        if (statusRecebida) statusRecebida.textContent = summary.status_recebida || summary.recebida || 0;
+        if (statusTriagem) statusTriagem.textContent = summary.status_em_triagem || summary.em_triagem || 0;
+        if (statusCampo) statusCampo.textContent = summary.status_em_campo || summary.em_campo || 0;
+        if (statusResolvida) statusResolvida.textContent = summary.status_resolvida || summary.resolvida || 0;
 
-        // Lista lateral
-        const listRes = await fetch(`${API_URL}/denuncas`, { headers: getAuthHeaders() });
-        const listData = await listRes.json();
+        // 3. ATUALIZAÇÃO DA LISTA DE OCORRÊNCIAS RECENTES (Painel Lateral)
         const container = document.getElementById("dashboardIncidentList");
-
         if (container && listData.denuncias) {
+            if (listData.denuncias.length === 0) {
+                container.innerHTML = `<div class="incident-row"><small style="color: #888;">Nenhuma denúncia encontrada na base.</small></div>`;
+                return;
+            }
+
             container.innerHTML = listData.denuncias
-                .slice(0, 4)
-                .map(d => `
-                <div class="incident-row">
-                    <span class="priority ${
-                        d.prioridade === 'alta' ? 'high' : d.prioridade === 'media' ? 'medium' : 'low'
-                    }">
-                        ${d.prioridade}
-                    </span>
-                    <div>
-                        <strong>${d.titulo}</strong>
-                        <small>${d.localizacao_texto}</small>
-                    </div>
-                    <em>
-                        ${new Date(d.criado_em).toLocaleTimeString('pt-BR', {
+                .slice(0, 4) // Pega as 4 mais recentes lançadas
+                .map(d => {
+                    // Trata a prioridade para aplicar a classe CSS correta (.high, .medium, .low)
+                    const prioridadeClasse = d.prioridade === 'alta' ? 'high' : d.prioridade === 'media' ? 'medium' : 'low';
+                    
+                    // Formata o horário do registro
+                    let horaTexto = "--:--";
+                    if (d.criado_em) {
+                        horaTexto = new Date(d.criado_em).toLocaleTimeString('pt-BR', {
                             hour: '2-digit',
                             minute: '2-digit'
-                        })}
-                    </em>
-                </div>
-            `).join('');
+                        });
+                    }
+
+                    return `
+                    <div class="incident-row">
+                        <span class="priority ${prioridadeClasse}">
+                            ${d.prioridade ? d.prioridade.charAt(0).toUpperCase() + d.prioridade.slice(1) : 'Geral'}
+                        </span>
+                        <div>
+                            <strong>${d.titulo || "Incidente Sem Título"}</strong>
+                            <small>${d.localizacao_texto || "Coordenadas registradas"}</small>
+                        </div>
+                        <em>${horaTexto}</em>
+                    </div>
+                    `;
+                }).join('');
         }
 
     } catch (err) {
-        console.error(err);
-        triggerNotice("Falha ao carregar dashboard avançada.");
+        console.error("Erro crítico na renderização da dashboard:", err);
     }
 }
 
 // ==========================================================================
-// PÁGINA DE DENÚNCIAS
-// ==========================================================================
-async function initDenunciasPage() {
-    const container = document.getElementById("pageIncidentList");
-    if (!container) return;
-
-    try {
-        const response = await fetch(`${API_URL}/denuncas`, { headers: getAuthHeaders() });
-        const data = await response.json();
-
-        if (!data.denuncias || data.denuncias.length === 0) {
-            container.innerHTML = `
-                <tr>
-                    <td colspan="6" style="padding:20px;color:#888;text-align:center;">
-                        Nenhuma ocorrência encontrada no banco.
-                    </td>
-                </tr>
-            `;
-            return;
-        }
-
-        container.innerHTML = data.denuncias.map(d => `
-            <tr class="table-row-incident">
-                <td><strong>#ID-${d.id}</strong></td>
-                <td><span class="priority-badge ${d.prioridade}">${d.prioridade.toUpperCase()}</span></td>
-                <td>
-                    <div class="table-cell-title">${d.titulo}</div>
-                    <div class="table-cell-sub">${d.localizacao_texto}</div>
-                </td>
-                <td><span class="status-badge ${d.status}">${d.status.replace('_', ' ')}</span></td>
-                <td>${new Date(d.criado_em).toLocaleDateString('pt-BR')}</td>
-                <td>
-                    <select class="action-select-status" onchange="updateIncidentStatus(${d.id}, this.value)">
-                        <option value="recebida" ${d.status === 'recebida' ? 'selected' : ''}>Recebida</option>
-                        <option value="em_triagem" ${d.status === 'em_triagem' ? 'selected' : ''}>Em Triagem</option>
-                        <option value="em_campo" ${d.status === 'em_campo' ? 'selected' : ''}>Em Campo</option>
-                        <option value="resolvida" ${d.status === 'resolvida' ? 'selected' : ''}>Resolvida</option>
-                        <option value="arquivada" ${d.status === 'arquivada' ? 'selected' : ''}>Arquivada</option>
-                    </select>
-                </td>
-            </tr>
-        `).join('');
-
-    } catch (error) {
-        triggerNotice("Erro ao carregar lista de denúncias.");
-    }
-}
-
-// ==========================================================================
-// ATUALIZAÇÃO DE STATUS
-// ==========================================================================
-window.updateIncidentStatus = async function(id, newStatus) {
-    try {
-        const response = await fetch(`${API_URL}/denuncas/${id}`, {
-            method: "PUT",
-            headers: getAuthHeaders(),
-            body: JSON.stringify({ status: newStatus })
-        });
-
-        if (response.ok) {
-            triggerNotice(`Ocorrência #${id} atualizada com sucesso.`);
-            initDenunciasPage();
-        }
-    } catch (error) {
-        triggerNotice("Falha ao atualizar status.");
-    }
-};
-
-// ==========================================================================
-// INICIALIZADOR FINAL GLOBAL ADAPTADO
+// RE-INICIALIZADOR DO DOM DO COMPORTAMENTO DO SISTEMA
 // ==========================================================================
 document.addEventListener("DOMContentLoaded", () => {
-    checkAuthentication();
-    initCommonEvents();
+    // Garante que as checagens e inits rodem sem travar funções antigas de cima
+    if (typeof checkAuthentication === "function") checkAuthentication();
+    if (typeof initCommonEvents === "function") initCommonEvents();
+    
+    // Roda os alimentadores visuais baseados na URL que o admin está navegando
     initAdvancedDashboard();
-    initDenunciasPage();
+    if (typeof initDenunciasPage === "function") initDenunciasPage();
 });
